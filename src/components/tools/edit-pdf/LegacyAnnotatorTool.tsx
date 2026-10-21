@@ -135,11 +135,11 @@ export function LegacyAnnotatorTool({
                 (btn as HTMLElement).style.display = 'none';
               }
             });
-          }          // 3. Inject PDFCraft Enrichment Script
+          }          // 3. Inject TectSkill PDF Enrichment Script
           const patchScript = doc.createElement('script');
           patchScript.textContent = `
             (function() {
-              console.log('[PDFCraft Patch] Initializing annotation patches...');
+              console.log('[TectSkill PDF Patch] Initializing annotation patches...');
 
               let undoStack = [];
               let redoStack = [];
@@ -163,7 +163,7 @@ export function LegacyAnnotatorTool({
                 const ext = window.pdfjsAnnotationExtensionInstance;
                 if (ext) {
                   clearInterval(initInterval);
-                  console.log('[PDFCraft Patch] pdfjsAnnotationExtensionInstance found! Setting up patches...');
+                  console.log('[TectSkill PDF Patch] pdfjsAnnotationExtensionInstance found! Setting up patches...');
                   setupCloudFix();
                   setupColorPickerAndStroke();
                   setupUndoRedoAndAuthorPatch();
@@ -453,7 +453,7 @@ export function LegacyAnnotatorTool({
                 const stage = ext?.stage || ext?.konvaStage || (window.Konva && window.Konva.stages[0]);
                 if (!stage) return;
                 
-                console.log('[PDFCraft Patch] Setting up Konva Snapping Alignment...');
+                console.log('[TectSkill PDF Patch] Setting up Konva Snapping Alignment...');
                 
                 stage.on('dragmove', function(e) {
                   const activeShape = e.target;
@@ -541,7 +541,7 @@ export function LegacyAnnotatorTool({
                 if (proto.__pdfcraftArrowHandlesPatched) return;
                 proto.__pdfcraftArrowHandlesPatched = true;
 
-                console.log('[PDFCraft Patch] Setting up arrow endpoint handles...');
+                console.log('[TectSkill PDF Patch] Setting up arrow endpoint handles...');
 
                 const HANDLE_RADIUS = 6;
                 const HANDLE_HIT_RADIUS = 10;
@@ -722,9 +722,10 @@ export function LegacyAnnotatorTool({
 
                 const originalSave = pdfLib.PDFDocument.prototype.save;
                 pdfLib.PDFDocument.prototype.save = async function(saveOptions) {
-                  console.log('[PDFCraft Patch] Intercepting save to inspect for Chinese text...');
+                  console.log('[TectSkill PDF Patch] Intercepting save to inspect for Chinese text...');
                   
                   let hasChinese = false;
+                  let hasThai = false; // TectSkill PDF
                   
                   // Inspect the annotation store inside PDFJS Annotation Extension
                   const annotationExtension = window.pdfjsAnnotationExtensionInstance;
@@ -736,26 +737,31 @@ export function LegacyAnnotatorTool({
                       if (ann.name === 'freeText' && /[\u4e00-\u9fa5]/.test(ann.text || '')) {
                         hasChinese = true;
                       }
+                      if (ann.name === 'freeText' && /[\u0E00-\u0E7F]/.test(ann.text || '')) {
+                        hasThai = true;
+                      }
                     });
                   }
 
-                  if (hasChinese) {
+                  if (hasChinese || hasThai) {
                     try {
-                      console.log('[PDFCraft Patch] Chinese text found. Embedding NotoSansSC-Regular font...');
-                      const fontBytes = await fetch('/fonts/NotoSansSC-Regular.ttf').then(res => res.arrayBuffer());
+                      // TectSkill PDF: Thai free-text annotations use the bundled Sarabun font
+                      const fontUrl = hasThai ? '/fonts/Sarabun-Regular.ttf' : '/fonts/NotoSansSC-Regular.ttf';
+                      console.log('[TectSkill PDF] Non-Latin text found. Embedding font:', fontUrl);
+                      const fontBytes = await fetch(fontUrl).then(res => res.arrayBuffer());
                       const customFont = await this.embedFont(fontBytes, { subset: true });
                       
                       // Intercept subsequent font loading requests for Helvetica inside pdf-lib
                       const originalEmbedFont = this.embedFont;
                       this.embedFont = async function(fontToEmbed, embedOpts) {
                         if (fontToEmbed === pdfLib.StandardFonts.Helvetica || fontToEmbed === 'Helvetica') {
-                          console.log('[PDFCraft Patch] Redirected Helvetica embed to NotoSansSC font');
+                          console.log('[TectSkill PDF Patch] Redirected Helvetica embed to NotoSansSC font');
                           return customFont;
                         }
                         return originalEmbedFont.call(this, fontToEmbed, embedOpts);
                       };
                     } catch (e) {
-                      console.error('[PDFCraft Patch] Failed to embed Chinese font subset', e);
+                      console.error('[TectSkill PDF Patch] Failed to embed Chinese font subset', e);
                     }
                   }
 
@@ -771,7 +777,7 @@ export function LegacyAnnotatorTool({
                   if (activeTool === 'cloud') {
                     const konvaContent = document.querySelector('.konvajs-content');
                     if (konvaContent) {
-                      console.log('[PDFCraft Patch] Intercepted dblclick for cloud tool, dispatching to Konva stage.');
+                      console.log('[TectSkill PDF Patch] Intercepted dblclick for cloud tool, dispatching to Konva stage.');
                       const dblEvent = new MouseEvent('dblclick', {
                         bubbles: true,
                         cancelable: true,
@@ -792,7 +798,7 @@ export function LegacyAnnotatorTool({
                     if (activeTool === 'cloud') {
                       const konvaContent = document.querySelector('.konvajs-content');
                       if (konvaContent) {
-                        console.log('[PDFCraft Patch] Intercepted Enter key for cloud tool, dispatching dblclick to end drawing.');
+                        console.log('[TectSkill PDF Patch] Intercepted Enter key for cloud tool, dispatching dblclick to end drawing.');
                         const dblEvent = new MouseEvent('dblclick', {
                           bubbles: true,
                           cancelable: true,
@@ -845,7 +851,7 @@ export function LegacyAnnotatorTool({
               function injectCustomMenuControls(menu) {
                 if (menu.querySelector('.pdfcraft-custom-controls')) return;
 
-                console.log('[PDFCraft Patch] CustomAnnotationMenu opened, injecting custom controls...');
+                console.log('[TectSkill PDF Patch] CustomAnnotationMenu opened, injecting custom controls...');
 
                 const container = document.createElement('div');
                 container.className = 'pdfcraft-custom-controls';
@@ -883,7 +889,7 @@ export function LegacyAnnotatorTool({
                 nativeSliders.forEach(slider => {
                   if (slider.getAttribute('min') === '1') {
                     slider.setAttribute('min', '0');
-                    console.log('[PDFCraft Patch] Stroke width slider updated min to 0');
+                    console.log('[TectSkill PDF Patch] Stroke width slider updated min to 0');
                   }
                 });
 
@@ -1034,7 +1040,7 @@ export function LegacyAnnotatorTool({
                   lastStateStr = stateStr;
                   updateUndoRedoButtonsState();
                 } catch (err) {
-                  console.error('[PDFCraft Patch] Failed to load state', err);
+                  console.error('[TectSkill PDF Patch] Failed to load state', err);
                 } finally {
                   setTimeout(() => {
                     isDoingUndoRedo = false;
@@ -1102,7 +1108,7 @@ export function LegacyAnnotatorTool({
             })();
           `;
           doc.body.appendChild(patchScript);
-          console.log('[PDFCraft Patch] Enrichment script successfully injected into iframe!');
+          console.log('[TectSkill PDF Patch] Enrichment script successfully injected into iframe!');
         }
       } catch (e) {
         console.warn('Could not access iframe content to inject patches', e);

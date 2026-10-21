@@ -9,6 +9,7 @@ import type { ProcessInput, ProcessOutput, ProgressCallback } from '@/types/pdf'
 import { PDFErrorCode } from '@/types/pdf';
 import { BasePDFProcessor } from '../processor';
 import { loadPdfLib } from '../loader';
+import { containsThai, embedThaiFont } from '../thai/thai-text';
 import type { PDFPage, PDFFont, PDFImage } from 'pdf-lib';
 
 
@@ -178,7 +179,11 @@ export class WatermarkProcessor extends BasePDFProcessor {
 
       let font: Awaited<ReturnType<typeof pdf.embedFont>>;
 
-      if (needsCJKFont) {
+      if (needsCJKFont && containsThai(wmOptions.text)) {
+        // TectSkill PDF: Thai text → bundled Sarabun (NotoSansSC has no Thai glyphs)
+        this.updateProgress(25, 'Loading Thai font...');
+        font = await embedThaiFont(pdf, true);
+      } else if (needsCJKFont) {
         this.updateProgress(25, 'Loading CJK font...');
         const fontkit = await import('@pdf-lib/fontkit');
         pdf.registerFontkit(fontkit.default || fontkit);

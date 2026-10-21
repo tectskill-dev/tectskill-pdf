@@ -15,6 +15,7 @@ import type {
 import { PDFErrorCode } from '@/types/pdf';
 import { BasePDFProcessor } from '../processor';
 import { loadPdfLib } from '../loader';
+import { containsThai, embedThaiFont, wrapThaiText } from '../thai/thai-text';
 
 /**
  * Page size presets in points (72 points = 1 inch)
@@ -48,6 +49,8 @@ export interface TextColor {
  * Available font families with their display names and URLs
  */
 export const AVAILABLE_FONTS = [
+  // TectSkill PDF: Thai font bundled with the app (works offline)
+  { id: 'sarabun', name: 'Sarabun (ไทย / English)', type: 'local', url: '/fonts/Sarabun-Regular.ttf' },
   // Standard PDF fonts (no embedding needed, small file size)
   { id: 'helvetica', name: 'Helvetica (Sans-serif)', type: 'standard' },
   { id: 'times', name: 'Times (Serif)', type: 'standard' },
@@ -107,7 +110,7 @@ export interface TextToPDFOptions {
 const DEFAULT_OPTIONS: TextToPDFOptions = {
   pageSize: 'A4',
   orientation: 'portrait',
-  fontId: 'helvetica',
+  fontId: 'sarabun',
   fontSize: 12,
   lineHeight: 1.5,
   textColor: { r: 0, g: 0, b: 0 },
@@ -279,11 +282,21 @@ export class TextToPDFProcessor extends BasePDFProcessor {
       const pdfDoc = await pdfLib.PDFDocument.create();
 
       // Get selected font config
-      const fontConfig = AVAILABLE_FONTS.find(f => f.id === pdfOptions.fontId) || AVAILABLE_FONTS[0];
+      let fontConfig: (typeof AVAILABLE_FONTS)[number] =
+        AVAILABLE_FONTS.find(f => f.id === pdfOptions.fontId) || AVAILABLE_FONTS[0];
+
+      // TectSkill PDF: Thai text with a font that has no Thai glyphs → use Sarabun
+      const thaiCapableFonts = ['sarabun', 'noto-sans-thai'];
+      if (containsThai(combinedText) && !thaiCapableFonts.includes(fontConfig.id)) {
+        fontConfig = AVAILABLE_FONTS.find(f => f.id === 'sarabun')!;
+      }
 
       let font: Awaited<ReturnType<typeof pdfDoc.embedFont>>;
 
-      if (fontConfig.type === 'standard') {
+      if (fontConfig.type === 'local') {
+        this.updateProgress(30, 'Loading Thai font...');
+        font = await embedThaiFont(pdfDoc);
+      } else if (fontConfig.type === 'standard') {
         // Use standard PDF fonts (no embedding, small file size)
         const standardFontMap: Record<string, keyof typeof pdfLib.StandardFonts> = {
           'helvetica': 'Helvetica',
@@ -371,6 +384,32 @@ export class TextToPDFProcessor extends BasePDFProcessor {
         if (y < margin.bottom) {
           page = pdfDoc.addPage([pageWidth, pageHeight]);
           y = pageHeight - margin.top;
+        }
+        continue;
+      }
+
+      // TectSkill PDF: Thai has no spaces between words → segment with Intl.Segmenter
+      if (containsThai(paragraph)) {
+        const lines = wrapThaiText(paragraph, textWidth, (t) => font.widthOfTextAtSize(t, fontSize));
+        for (const line of lines) {
+          if (line) {
+            try {
+              page.drawText(line, {
+                x: margin.left,
+                y,
+                size: fontSize,
+                font,
+                color: pdfLib.rgb(textColor.r, textColor.g, textColor.b),
+              });
+            } catch {
+              // Skip if drawing fails
+            }
+          }
+          y -= lineHeight;
+          if (y < margin.bottom) {
+            page = pdfDoc.addPage([pageWidth, pageHeight]);
+            y = pageHeight - margin.top;
+          }
         }
         continue;
       }

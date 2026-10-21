@@ -1,5 +1,5 @@
 /**
- * PDFCraft Signature Image Loader
+ * TectSkill PDF Signature Image Loader
  *
  * Normalizes a user-provided signature image file into a PNG data URL.
  * The embedded PDF.js signature editor only handles raster images

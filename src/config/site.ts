@@ -2,15 +2,15 @@
  * Site configuration
  */
 export const siteConfig = {
-  name: 'PDFCraft',
+  name: 'TectSkill PDF',
   description: 'Professional PDF Tools - Free, Private & Browser-Based. Merge, split, compress, convert, and edit PDF files online without uploading to servers.',
-  url: 'https://pdfcraft.devtoolcafe.com',
+  url: 'https://tool.tectskill.com',
   ogImage: '/images/og-image.png',
   links: {
-    github: 'https://github.com/PDFCraftTool/pdfcraft',
-    twitter: 'https://twitter.com/pdfcraft',
+    github: 'https://github.com/tectskill-dev/tectskill-pdf',
+    twitter: 'https://tectskill.com',
   },
-  creator: 'PDFCraft Team',
+  creator: 'TectSkill',
   keywords: [
     'PDF tools',
     'PDF editor',
@@ -25,10 +25,10 @@ export const siteConfig = {
   ],
   // SEO-related settings
   seo: {
-    titleTemplate: '%s | PDFCraft',
-    defaultTitle: 'PDFCraft - Professional PDF Tools',
-    twitterHandle: '@pdfcraft',
-    locale: 'en_US',
+    titleTemplate: '%s | TectSkill PDF',
+    defaultTitle: 'TectSkill PDF - Professional PDF Tools',
+    twitterHandle: '@tectskill',
+    locale: 'th_TH',
   },
 };
 

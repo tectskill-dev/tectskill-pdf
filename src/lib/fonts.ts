@@ -18,6 +18,26 @@
  */
 
 import { Inter, JetBrains_Mono } from 'next/font/google';
+import localFont from 'next/font/local';
+
+/**
+ * TectSkill PDF — Sarabun (SIL OFL 1.1) for Thai UI text.
+ * Bundled locally (works offline / in the desktop app). Inter has no Thai
+ * glyphs, so the browser falls through to Sarabun for every Thai character
+ * while Latin text keeps using Inter.
+ */
+export const sarabun = localFont({
+  src: [
+    { path: '../app/fonts/Sarabun-Regular.ttf', weight: '400', style: 'normal' },
+    { path: '../app/fonts/Sarabun-Medium.ttf', weight: '500', style: 'normal' },
+    { path: '../app/fonts/Sarabun-SemiBold.ttf', weight: '600', style: 'normal' },
+    { path: '../app/fonts/Sarabun-Bold.ttf', weight: '700', style: 'normal' },
+  ],
+  display: 'swap',
+  variable: '--font-thai',
+  preload: true,
+  fallback: ['Leelawadee UI', 'Thonburi', 'Tahoma', 'sans-serif'],
+});
 
 /**
  * Inter font - Primary sans-serif font
@@ -62,7 +82,7 @@ export const jetbrainsMono = JetBrains_Mono({
 /**
  * Combined font variables for use in className
  */
-export const fontVariables = `${inter.variable} ${jetbrainsMono.variable}`;
+export const fontVariables = `${inter.variable} ${sarabun.variable} ${jetbrainsMono.variable}`;
 
 /**
  * Font class names for direct usage

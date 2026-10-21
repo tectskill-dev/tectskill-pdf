@@ -59,4 +59,5 @@ export const LOCALE_CONFIG = {
   pl: { name: 'Polish', nativeName: 'Polski', direction: 'ltr' as const },
   cs: { name: 'Czech', nativeName: 'Čeština', direction: 'ltr' as const },
   hi: { name: 'Hindi', nativeName: 'हिन्दी', direction: 'ltr' as const },
+  th: { name: 'Thai', nativeName: 'ไทย', direction: 'ltr' as const },
 };

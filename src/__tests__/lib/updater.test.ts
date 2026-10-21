@@ -149,7 +149,7 @@ describe('Software Updater', () => {
         tag_name: 'v2026.09.15-xyz',
         name: 'PDFCraft v2026.09.15',
         published_at: '2026-09-15T12:00:00Z',
-        html_url: 'https://github.com/PDFCraftTool/pdfcraft/releases/tag/v2026.09.15-xyz',
+        html_url: 'https://github.com/tectskill-dev/tectskill-pdf/releases/tag/v2026.09.15-xyz',
         body: '## Release notes',
         assets: [
           {

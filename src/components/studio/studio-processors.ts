@@ -1,6 +1,6 @@
 /**
  * Studio In-Memory Processors Runner
- * Bridges studio tool actions to PDFCraft's headless processors.
+ * Bridges studio tool actions to TectSkill PDF's headless processors.
  */
 
 import { tools as allTools } from '@/config/tools';
@@ -186,7 +186,7 @@ export const STUDIO_TOOLS: StudioToolConfig[] = allTools.map((tool) => {
     name: tool.id.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
     category: tool.category,
     icon: tool.icon,
-    description: tool.features?.slice(0, 3).join(' • ') || 'PDFCraft professional tool',
+    description: tool.features?.slice(0, 3).join(' • ') || 'TectSkill PDF professional tool',
     executionType: getToolExecutionType(tool.id),
     featured: STUDIO_FEATURED_TOOL_IDS.includes(tool.id),
   };

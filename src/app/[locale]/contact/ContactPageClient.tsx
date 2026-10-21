@@ -33,21 +33,21 @@ export default function ContactPageClient({ locale }: ContactPageClientProps) {
       title: t('methods.email.title'),
       description: t('methods.email.description'),
       action: t('methods.email.action'),
-      href: 'mailto:contact@pdfcraft.gitu.net',
+      href: 'mailto:tectskill@gmail.com',
     },
     {
       icon: Github,
       title: t('methods.github.title'),
       description: t('methods.github.description'),
       action: t('methods.github.action'),
-      href: 'https://github.com/PDFCraftTool/pdfcraft',
+      href: 'https://github.com/tectskill-dev/tectskill-pdf',
     },
     {
       icon: Twitter,
       title: t('methods.twitter.title'),
       description: t('methods.twitter.description'),
       action: t('methods.twitter.action'),
-      href: 'https://x.com/PDFCraftTool',
+      href: 'https://tectskill.com',
     },
   ];
 
@@ -60,10 +60,12 @@ export default function ContactPageClient({ locale }: ContactPageClientProps) {
     e.preventDefault();
     setFormStatus('submitting');
 
-    // Simulate form submission (in a real app, this would send to an API)
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    // For demo purposes, always succeed
+    // TectSkill PDF: the site is static (no backend), so open the visitor's
+    // email app with the message pre-filled, addressed to tectskill@gmail.com
+    const subject = `[TectSkill PDF] ${formData.subject || 'Contact'}`;
+    const body = `${formData.message}\n\n— ${formData.name} <${formData.email}>`;
+    window.location.href = `mailto:tectskill@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    await new Promise(resolve => setTimeout(resolve, 500));
     setFormStatus('success');
     setFormData({ name: '', email: '', subject: '', message: '' });
   };

@@ -1,5 +1,5 @@
 /**
- * PDFCraft Local Signature Storage
+ * TectSkill PDF Local Signature Storage
  * Manages extracted and custom signatures stored in localStorage.
  */
 

@@ -3,10 +3,10 @@
  * Defines supported locales and routing configuration
  */
 
-export const locales = ['en', 'ja', 'ko', 'es', 'fr', 'de', 'zh', 'zh-TW', 'pt', 'ar', 'he', 'it', 'id', 'vi', 'ro', 'pl', 'cs', 'hi'] as const;
+export const locales = ['th', 'en', 'ja', 'ko', 'es', 'fr', 'de', 'zh', 'zh-TW', 'pt', 'ar', 'he', 'it', 'id', 'vi', 'ro', 'pl', 'cs', 'hi'] as const;
 export type Locale = (typeof locales)[number];
 
-export const defaultLocale: Locale = 'en';
+export const defaultLocale: Locale = 'th';
 
 export const localeConfig: Record<Locale, {
   name: string;
@@ -14,6 +14,7 @@ export const localeConfig: Record<Locale, {
   direction: 'ltr' | 'rtl';
   dateFormat: string;
 }> = {
+  th: { name: 'Thai', nativeName: 'ไทย', direction: 'ltr', dateFormat: 'DD/MM/YYYY' },
   en: { name: 'English', nativeName: 'English', direction: 'ltr', dateFormat: 'MM/DD/YYYY' },
   ja: { name: 'Japanese', nativeName: '日本語', direction: 'ltr', dateFormat: 'YYYY/MM/DD' },
   ko: { name: 'Korean', nativeName: '한국어', direction: 'ltr', dateFormat: 'YYYY.MM.DD' },

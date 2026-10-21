@@ -28,9 +28,11 @@ import roMessages from '../../../messages/ro.json';
 import plMessages from '../../../messages/pl.json';
 import csMessages from '../../../messages/cs.json';
 import hiMessages from '../../../messages/hi.json';
+import thMessages from '../../../messages/th.json';
 
 // Map of locale to messages
 const LOCALE_MESSAGES: Record<Locale, Record<string, unknown>> = {
+  th: thMessages,
   en: enMessages,
   ja: jaMessages,
   ko: koMessages,

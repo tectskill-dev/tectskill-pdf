@@ -53,7 +53,15 @@ export async function loadPdfLib(): Promise<PDFLibModule> {
     return pdfLibLoadingPromise;
   }
 
-  pdfLibLoadingPromise = import('pdf-lib').then((module) => {
+  pdfLibLoadingPromise = import('pdf-lib').then(async (module) => {
+    // TectSkill PDF: Thai text support (font fallback, GPOS shaping, Thai wrapping)
+    try {
+      const thai = await import('./thai/thai-text');
+      thai.installThaiSupport(module);
+      await thai.preloadThaiSupport();
+    } catch (err) {
+      console.warn('[TectSkill PDF] Thai support could not be initialised:', err);
+    }
     pdfLibInstance = module;
     pdfLibLoadingPromise = null;
     return module;

@@ -164,7 +164,7 @@ export function generateMarkdownOutput(
 ): string {
   const sections: string[] = [
     `# ${docTitle.replace(/\.[^.]+$/, '')}`,
-    `> *Extracted via PDFCraft OCR on ${new Date().toLocaleDateString()}*`,
+    `> *Extracted via TectSkill PDF OCR on ${new Date().toLocaleDateString()}*`,
     '',
   ];
 
@@ -200,7 +200,7 @@ export function generateJsonOutput(
       metadata: {
         ...meta,
         generatedAt: new Date().toISOString(),
-        engine: 'PDFCraft OCR Engine v2',
+        engine: 'TectSkill PDF OCR Engine v2',
       },
       pages: pagesData.map(p => ({
         pageNumber: p.pageNum,
@@ -751,6 +751,18 @@ export class OCRProcessor extends BasePDFProcessor {
 
     const standardFont = await pdfDoc.embedFont(pdfLib.StandardFonts.Helvetica);
 
+    // TectSkill PDF: Thai OCR text needs a font with Thai glyphs to stay searchable/copyable
+    let thaiFont: any = null;
+    const hasThaiWords = ocrPagesData.some((p) => p.words.some((w: any) => /[\u0E00-\u0E7F]/.test(w?.text || '')));
+    if (hasThaiWords) {
+      try {
+        const { embedThaiFont } = await import('../thai/thai-text');
+        thaiFont = await embedThaiFont(pdfDoc);
+      } catch (e) {
+        console.warn('[OCR] Thai font not available', e);
+      }
+    }
+
     for (const pageData of ocrPagesData) {
       const pageIdx = pageData.pageNum - 1;
       if (pageIdx >= pdfDoc.getPageCount()) continue;
@@ -764,7 +776,8 @@ export class OCRProcessor extends BasePDFProcessor {
 
         // Check if text contains non-ASCII characters
         const isNonAscii = /[^\u0020-\u007E]/.test(text);
-        const fontToUse = (isNonAscii && unicodeFont) ? unicodeFont : standardFont;
+        const isThai = /[\u0E00-\u0E7F]/.test(text);
+        const fontToUse = (isThai && thaiFont) ? thaiFont : (isNonAscii && unicodeFont) ? unicodeFont : standardFont;
 
         try {
           page.drawText(text, {

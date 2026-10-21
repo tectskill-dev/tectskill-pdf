@@ -14,6 +14,7 @@ import type { ProcessInput, ProcessOutput, ProgressCallback } from '@/types/pdf'
 import { PDFErrorCode } from '@/types/pdf';
 import { BasePDFProcessor } from '../processor';
 import { loadPdfLib } from '../loader';
+import { containsThai, embedThaiFont } from '../thai/thai-text';
 
 export type FormFieldType =
   | 'text'
@@ -186,7 +187,13 @@ export class FormFillerProcessor extends BasePDFProcessor {
 
       try {
         if (typeof form.updateFieldAppearances === 'function') {
-          form.updateFieldAppearances();
+          // TectSkill PDF: Helvetica cannot encode Thai — use Sarabun for appearances
+          const hasThai = formOptions.fields.some((f) => containsThai(String(f.value ?? '')));
+          if (hasThai) {
+            form.updateFieldAppearances(await embedThaiFont(pdf));
+          } else {
+            form.updateFieldAppearances();
+          }
         }
       } catch {
         // Appearance regeneration fallback is handled by pdf.save()
