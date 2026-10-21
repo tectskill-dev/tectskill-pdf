@@ -2,7 +2,7 @@
 name = "pdfcraft"
 version = "0.1.0"
 description = "TectSkill PDF Desktop Application"
-authors = ["PDFCraft"]
+authors = ["TectSkill", "PDFCraft contributors"]
 edition = "2021"
 
 [build-dependencies]
