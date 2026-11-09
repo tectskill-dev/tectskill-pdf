@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { ArrowRight, Zap, Wrench, Lock, Sparkles, Edit, FileImage, FolderOpen, Settings, ShieldCheck, Star, LayoutGrid } from 'lucide-react';
+import { ArrowRight, Zap, Wrench, Lock, Sparkles, Edit, FileImage, FolderOpen, Settings, ShieldCheck, Star, LayoutGrid, DraftingCompass } from 'lucide-react';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { ToolGrid } from '@/components/tools/ToolGrid';
@@ -60,6 +60,7 @@ export default function HomePageClient({ locale, localizedToolContent }: HomePag
     'organize-manage': FolderOpen,
     'optimize-repair': Settings,
     'secure-pdf': ShieldCheck,
+    architect: DraftingCompass,
   };
 
   const categoryTranslationKeys: Record<ToolCategory, string> = {
@@ -69,6 +70,7 @@ export default function HomePageClient({ locale, localizedToolContent }: HomePag
     'organize-manage': 'organizeManage',
     'optimize-repair': 'optimizeRepair',
     'secure-pdf': 'securePdf',
+    architect: 'architect',
   };
 
   // Category sections to display
@@ -78,6 +80,7 @@ export default function HomePageClient({ locale, localizedToolContent }: HomePag
     'convert-from-pdf',
     'organize-manage',
     'optimize-repair',
+    'architect',
     'secure-pdf',
   ];
 

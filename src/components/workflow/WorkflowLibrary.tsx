@@ -62,6 +62,7 @@ export function WorkflowLibrary({
         'images-to-pdf-watermark': 'imagesToWatermarkedPdf',
         'pdf-to-images-compress': 'pdfToImages',
         'secure-pdf': 'securePdf',
+        architect: 'architect',
         'document-prep': 'documentPrep',
         'optimize-for-web': 'optimizeForWeb',
         'split-and-watermark': 'splitAndWatermark',

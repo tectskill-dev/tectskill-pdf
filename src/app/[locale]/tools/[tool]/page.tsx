@@ -25,6 +25,7 @@ import { ViewMetadataTool } from '@/components/tools/view-metadata';
 import { EditMetadataTool } from '@/components/tools/edit-metadata';
 import { PDFsToZipTool } from '@/components/tools/pdf-to-zip';
 import { ComparePDFsTool } from '@/components/tools/compare-pdfs';
+import { ArchToolFrame } from '@/components/tools/arch-tools';
 import { EditPDFTool } from '@/components/tools/edit-pdf';
 import { ImageToPDFTool } from '@/components/tools/image-to-pdf';
 import { TextToPDFTool } from '@/components/tools/text-to-pdf';
@@ -295,6 +296,21 @@ export default async function ToolPageRoute({ params }: ToolPageParams) {
         return <EditMetadataTool />;
       case 'pdf-to-zip':
         return <PDFsToZipTool />;
+      // TectSkill PDF: architect tools (self-contained apps in /public/arch-tools)
+      case 'revision-compare':
+        return <ArchToolFrame file="revision-compare" title={content.title} />;
+      case 'measure-pdf-scale':
+        return <ArchToolFrame file="measure-scale" title={content.title} />;
+      case 'sheet-set-builder':
+        return <ArchToolFrame file="sheet-set" title={content.title} />;
+      case 'stamp-drawings':
+        return <ArchToolFrame file="batch-stamp" title={content.title} />;
+      case 'markup-drawings':
+        return <ArchToolFrame file="markup" title={content.title} />;
+      case 'compress-drawings':
+        return <ArchToolFrame file="compress" title={content.title} />;
+      case 'print-to-scale':
+        return <ArchToolFrame file="print-scale" title={content.title} />;
       case 'compare-pdfs':
         return <ComparePDFsTool />;
       case 'edit-pdf':

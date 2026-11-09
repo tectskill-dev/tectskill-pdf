@@ -1,0 +1,629 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>วัดตามสเกล – Measure with Scale | TectSkill</title>
+<meta name="description" content="วัดระยะ ความยาว และพื้นที่จากแบบ PDF ตามมาตราส่วนจริง สแนปเข้าเส้นในแบบ ส่งออก CSV ฟรี">
+<link href="fonts/fonts.css" rel="stylesheet">
+<style>
+:root{
+  --bg:#E9ECEB; --panel:#F7F8F7; --ink:#1C2427; --muted:#5B676C; --line:#C9D0CF;
+  --dist:#1670C2; --poly:#7A3FC4; --area:#E07A00; --cal:#D02438; --btn:#1C2427; --btn-ink:#F7F8F7;
+  --grid:rgba(28,36,39,.06);
+  color-scheme:light; box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#141A1C; --panel:#1C2427; --ink:#E6EBEA; --muted:#98A4A8; --line:#2F3A3E;
+    --btn:#E6EBEA; --btn-ink:#141A1C; --grid:rgba(230,235,234,.05); color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141A1C; --panel:#1C2427; --ink:#E6EBEA; --muted:#98A4A8; --line:#2F3A3E;
+  --btn:#E6EBEA; --btn-ink:#141A1C; --grid:rgba(230,235,234,.05); color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.6 "IBM Plex Sans Thai",system-ui,-apple-system,"Segoe UI",sans-serif}
+.app{display:grid;grid-template-columns:320px 1fr;height:100%}
+aside{background:var(--panel);border-right:1px solid var(--line);overflow-y:auto;padding:20px 18px 28px}
+h1{font-size:22px;line-height:1.25;font-weight:600;margin:0 0 4px}
+.lede{color:var(--muted);font-size:13.5px;margin:0 0 16px}
+h2{font-size:14px;font-weight:600;margin:22px 0 8px}
+.file-btn{display:inline-block;cursor:pointer;font-size:13px;padding:5px 12px;border-radius:7px;border:1px solid var(--line);color:var(--ink)}
+.file-btn:hover{border-color:var(--ink)}
+.file-btn input{position:absolute;width:1px;height:1px;opacity:0}
+.file-btn:focus-within{outline:2px solid var(--dist);outline-offset:2px}
+.drop{border:1.5px dashed var(--line);border-radius:10px;padding:10px 12px}
+.drop.drag{border-color:var(--ink);background:var(--grid)}
+.name{font-size:13px;color:var(--muted);word-break:break-all;margin:2px 0 8px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+select,input[type=number],input[type=text]{font:inherit;font-size:13px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:3px 6px}
+input[type=number]{width:84px}
+.btn{font:inherit;font-weight:500;font-size:14px;border:0;border-radius:8px;padding:8px 14px;background:var(--btn);color:var(--btn-ink);cursor:pointer}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn.sm{font-size:13px;padding:5px 10px}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--dist);outline-offset:2px}
+.field{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:8px 0;font-size:13.5px}
+.scale-now{font-size:13.5px;background:var(--bg);border-radius:8px;padding:8px 10px;margin:6px 0 10px}
+.scale-now b{font-weight:600}
+.scale-now small{display:block;color:var(--muted);font-size:12px}
+.cal{border:1.5px solid var(--cal);border-radius:10px;padding:10px 12px;margin-top:10px;font-size:13.5px}
+#status{font-size:13px;color:var(--muted);min-height:1.6em;margin-top:8px}
+#status.err{color:var(--cal)}
+#list{list-style:none;padding:0;margin:0}
+#list li{display:grid;grid-template-columns:18px 1fr auto 28px;gap:8px;align-items:center;padding:5px 6px;border-radius:7px;cursor:pointer}
+#list li:hover,#list li.sel{background:var(--grid)}
+#list li.sel{box-shadow:inset 2px 0 0 var(--ink)}
+#list input{width:100%;background:transparent;border-color:transparent;padding:2px 4px}
+#list input:hover,#list input:focus{border-color:var(--line)}
+#list .val{font-size:13.5px;font-variant-numeric:tabular-nums;white-space:nowrap}
+#list .del{border:0;background:transparent;color:var(--muted);font-size:16px;cursor:pointer;border-radius:6px}
+#list .del:hover{color:var(--cal)}
+.glyph{width:14px;height:14px;display:block}
+.totals{font-size:13.5px;margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
+.totals div{display:flex;justify-content:space-between}
+.hint{font-size:12.5px;color:var(--muted);margin:8px 0 0}
+main{position:relative;display:flex;flex-direction:column;min-width:0;min-height:0}
+.toolbar{display:flex;gap:6px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);background:var(--panel);flex-wrap:wrap}
+.toolbar button{font:inherit;font-size:13px;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:7px;padding:4px 10px;cursor:pointer;min-width:34px}
+.toolbar button:hover{border-color:var(--ink)}
+.toolbar button[aria-pressed="true"]{background:var(--btn);color:var(--btn-ink);border-color:var(--btn)}
+.toolbar .sep{width:1px;height:22px;background:var(--line);margin:0 4px}
+.toolbar .sp{flex:1}
+#readout{font-size:13px;font-variant-numeric:tabular-nums;color:var(--ink);min-width:90px}
+#zoomv{font-size:13px;color:var(--muted);min-width:46px;text-align:center}
+#viewer{flex:1;overflow:auto;min-height:0;background-color:var(--bg);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:24px 24px}
+.stage{display:flex;min-width:100%;min-height:100%;padding:16px}
+.sheet{position:relative;margin:auto;background:#fff;box-shadow:0 0 0 1px var(--line);cursor:crosshair;flex:none}
+.sheet canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.sheet svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.sheet.panning{cursor:grabbing}
+.lbl{font-family:"IBM Plex Sans Thai",sans-serif;font-weight:600;paint-order:stroke;stroke:#fff;stroke-linejoin:round}
+.empty{position:absolute;inset:52px 0 0 0;display:grid;place-items:center;pointer-events:none;padding:24px;text-align:center}
+.empty div{max-width:360px;color:var(--muted);font-size:14px}
+.empty strong{display:block;color:var(--ink);font-size:17px;font-weight:600;margin-bottom:6px}
+.empty .btn{pointer-events:auto;margin-top:14px}
+.hidden{display:none!important}
+@media (max-width:820px){
+  .app{grid-template-columns:1fr;height:auto}
+  aside{border-right:0;border-bottom:1px solid var(--line)}
+  main{height:78vh;height:78svh}
+}
+</style>
+<script src="brand.js" data-tool="measure-scale"></script>
+</head>
+<body>
+<div class="app">
+<aside>
+  <h1>วัดตามสเกล</h1>
+  <p class="lede">วัดระยะ ความยาวรวม และพื้นที่จากแบบ PDF ตามมาตราส่วนจริง ไฟล์ประมวลผลในเครื่องคุณเท่านั้น</p>
+
+  <div class="drop" id="drop">
+    <div class="name" id="fname">ยังไม่ได้เลือกไฟล์</div>
+    <div class="row">
+      <label class="file-btn">เลือก PDF<input type="file" accept="application/pdf,.pdf" id="file"></label>
+      <button class="btn ghost sm" id="demo">ลองกับแบบตัวอย่าง</button>
+      <label class="row hidden" id="pgwrap" style="font-size:13px;color:var(--muted);gap:6px">หน้า <select id="page"></select></label>
+    </div>
+  </div>
+  <div id="status" role="status" aria-live="polite"></div>
+
+  <h2>มาตราส่วน</h2>
+  <div class="scale-now" id="scaleNow">เปิดแบบก่อนเพื่อตั้งมาตราส่วน</div>
+  <div class="field"><span>มาตราส่วนในแบบ</span>
+    <span class="row" style="gap:4px">1 : <select id="denom">
+      <option>1</option><option>5</option><option>10</option><option>20</option><option>25</option><option>50</option><option>75</option>
+      <option selected>100</option><option>150</option><option>200</option><option>250</option><option>500</option><option>1000</option><option value="custom">กำหนดเอง</option>
+    </select></span></div>
+  <div class="field hidden" id="customWrap"><span>ตัวหาร</span><input type="number" id="customDenom" min="1" step="1" value="100"></div>
+  <button class="btn ghost sm" id="calBtn" disabled>ปรับเทียบจากระยะในแบบ</button>
+  <p class="hint">ใช้มาตราส่วนในแบบได้เมื่อ PDF ถูก export ที่ขนาดกระดาษจริง ถ้าไม่แน่ใจ ให้ปรับเทียบจากเส้นบอกระยะที่รู้ค่า</p>
+  <div class="cal hidden" id="calPanel">
+    <div id="calMsg">คลิกจุดเริ่มและจุดสิ้นสุดของเส้นบอกระยะที่รู้ค่า</div>
+    <div class="row hidden" id="calInputRow" style="margin-top:8px">
+      ระยะจริง <input type="number" id="calReal" min="0" step="0.01" placeholder="เช่น 6.00"> ม.
+      <button class="btn sm" id="calApply">ใช้ค่านี้</button>
+    </div>
+    <button class="btn ghost sm" id="calCancel" style="margin-top:8px">ยกเลิกการปรับเทียบ</button>
+  </div>
+
+  <h2>รายการที่วัด</h2>
+  <p class="hint" id="emptyList" style="margin-top:0">ยังไม่มีรายการ เลือกเครื่องมือด้านบนแบบแล้วคลิกบนแบบ</p>
+  <ul id="list"></ul>
+  <div class="totals hidden" id="totals"></div>
+  <div class="field"><span>ทศนิยม</span><select id="dec"><option>1</option><option selected>2</option><option>3</option></select></div>
+  <div class="row"><button class="btn ghost" id="csv" disabled>ส่งออกเป็น CSV</button><button class="btn ghost" id="clear" disabled>ล้างทั้งหมด</button></div>
+  <p class="hint">รายการที่วัดบันทึกอัตโนมัติในเบราว์เซอร์นี้ เปิดไฟล์เดิมอีกครั้งรายการจะกลับมาครบ</p>
+</aside>
+
+<main>
+  <div class="toolbar">
+    <button data-tool="distance" aria-pressed="true">ระยะ</button>
+    <button data-tool="poly" aria-pressed="false">ความยาวรวม</button>
+    <button data-tool="area" aria-pressed="false">พื้นที่</button>
+    <button id="ortho" aria-pressed="false" title="ล็อกแนวฉาก (กด Shift ค้างก็ได้)">ฉาก</button>
+    <button id="snapBtn" aria-pressed="true" title="สแนปเข้าปลายเส้น จุดกึ่งกลาง และเส้นในแบบ">สแนป</button>
+    <span class="sep"></span>
+    <button id="finish" class="hidden">เสร็จ</button>
+    <button id="undo" class="hidden">ลบจุดล่าสุด</button>
+    <span id="readout"></span>
+    <span class="sp"></span>
+    <button id="zout" aria-label="ย่อ">−</button><span id="zoomv">–</span><button id="zin" aria-label="ขยาย">+</button>
+    <button id="zfit">พอดีจอ</button>
+  </div>
+  <div id="viewer"><div class="stage"><div class="sheet hidden" id="sheet"><canvas id="cv"></canvas><svg id="ov" xmlns="http://www.w3.org/2000/svg"></svg></div></div></div>
+  <div class="empty" id="empty"><div><strong>เปิดแบบ PDF เพื่อเริ่มวัด</strong>ตั้งมาตราส่วนตามที่ระบุในแบบ หรือปรับเทียบจากเส้นบอกระยะ แล้วคลิกบนแบบเพื่อวัด<br><button class="btn ghost" id="demo2">ลองกับแบบตัวอย่าง</button></div></div>
+</main>
+</div>
+
+<script src="vendor/pdf.min.js"></script>
+<script src="vendor/pdf.worker.min.js"></script>
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const PDFJS=window.pdfjsLib||null;
+if(PDFJS)PDFJS.GlobalWorkerOptions.workerSrc='vendor/pdf.worker.min.js';
+const MAX_PX=14e6, PT_M=25.4/72/1000; // metres of paper per PDF point
+const viewer=$('#viewer'),sheet=$('#sheet'),cv=$('#cv'),ov=$('#ov');
+const COL={distance:'#1670C2',poly:'#7A3FC4',area:'#E07A00',cal:'#D02438'};
+const KIND={distance:'ระยะ',poly:'ความยาวรวม',area:'พื้นที่'};
+
+let doc=null,docName='',demo=false,pg=1,wPt=0,hPt=0,zoom=1,loadTok=0;
+let tool='distance',draft=[],hover=null,ortho=false,shift=false,sel=-1,calibrating=false,calPts=null,nextId=1;
+let snapOn=true,geo=null,lastPtr='mouse';
+const SNAPNAME={end:'ปลายเส้น',int:'จุดตัด',mid:'กึ่งกลาง',on:'บนเส้น',track:'แนวฉาก'};
+let storeKey=null,saveT=0;
+const pages={};let lastScale={mode:'paper',denom:100,mPerPt:100*PT_M};
+
+const setStatus=(t,err)=>{const s=$('#status');s.textContent=t;s.classList.toggle('err',!!err);};
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const dec=()=>+$('#dec').value;
+const fmt=v=>v.toLocaleString('th-TH',{minimumFractionDigits:dec(),maximumFractionDigits:dec()});
+function S(){if(!pages[pg])pages[pg]={...lastScale,items:[]};return pages[pg];}
+
+/* ---------- geometry ---------- */
+const dist=(a,b)=>Math.hypot(b.x-a.x,b.y-a.y);
+const pathLen=p=>{let s=0;for(let i=1;i<p.length;i++)s+=dist(p[i-1],p[i]);return s;};
+function polyArea(p){let s=0;for(let i=0;i<p.length;i++){const a=p[i],b=p[(i+1)%p.length];s+=a.x*b.y-b.x*a.y;}return Math.abs(s)/2;}
+function centroid(p){let a=0,cx=0,cy=0;for(let i=0;i<p.length;i++){const q=p[i],r=p[(i+1)%p.length],f=q.x*r.y-r.x*q.y;a+=f;cx+=(q.x+r.x)*f;cy+=(q.y+r.y)*f;}
+  if(Math.abs(a)<1e-9){return{x:p.reduce((s,q)=>s+q.x,0)/p.length,y:p.reduce((s,q)=>s+q.y,0)/p.length};}return{x:cx/(3*a),y:cy/(3*a)};}
+function value(it){const m=S().mPerPt;
+  if(it.type==='area')return{v:polyArea(it.pts)*m*m,u:'ตร.ม.',per:pathLen([...it.pts,it.pts[0]])*m};
+  return{v:pathLen(it.pts)*m,u:'ม.'};}
+function resolve(p,rPx){
+  const s=snapOn&&geo?findSnap(p,rPx):null;
+  if((ortho||shift)&&draft.length){
+    const l=draft[draft.length-1],b=s||p,hz=Math.abs(p.x-l.x)>=Math.abs(p.y-l.y),kind=s?'track':null;
+    return hz?{x:b.x,y:l.y,kind}:{x:l.x,y:b.y,kind};
+  }
+  return s||{x:p.x,y:p.y,kind:null};
+}
+
+/* ---------- vector snapping ---------- */
+async function extractSegs(page){
+  const O=PDFJS.OPS,U=PDFJS.Util,vp=page.getViewport({scale:1}),ol=await page.getOperatorList();
+  let ctm=vp.transform.slice(),cut=false;const st=[],segs=[],extra=[];
+  const T=(x,y)=>[ctm[0]*x+ctm[2]*y+ctm[4],ctm[1]*x+ctm[3]*y+ctm[5]];
+  for(let i=0;i<ol.fnArray.length;i++){
+    const fn=ol.fnArray[i],a=ol.argsArray[i];
+    if(fn===O.save)st.push(ctm.slice());
+    else if(fn===O.restore){if(st.length)ctm=st.pop();}
+    else if(fn===O.transform)ctm=U.transform(ctm,a);
+    else if(fn===O.paintFormXObjectBegin){st.push(ctm.slice());if(a&&a[0])ctm=U.transform(ctm,a[0]);}
+    else if(fn===O.paintFormXObjectEnd){if(st.length)ctm=st.pop();}
+    else if(fn===O.constructPath){
+      const ops=a[0],co=a[1];let j=0,cx=0,cy=0,sx=0,sy=0;
+      for(const op of ops){
+        if(op===O.moveTo){[cx,cy]=T(co[j],co[j+1]);sx=cx;sy=cy;j+=2;}
+        else if(op===O.lineTo){const[x,y]=T(co[j],co[j+1]);j+=2;segs.push(cx,cy,x,y);cx=x;cy=y;}
+        else if(op===O.curveTo){const[x,y]=T(co[j+4],co[j+5]);j+=6;extra.push(cx,cy,x,y);cx=x;cy=y;}
+        else if(op===O.curveTo2||op===O.curveTo3){const[x,y]=T(co[j+2],co[j+3]);j+=4;extra.push(cx,cy,x,y);cx=x;cy=y;}
+        else if(op===O.closePath){if(cx!==sx||cy!==sy)segs.push(cx,cy,sx,sy);cx=sx;cy=sy;}
+        else if(op===O.rectangle){
+          const x=co[j],y=co[j+1],w=co[j+2],h=co[j+3];j+=4;
+          const q=[T(x,y),T(x+w,y),T(x+w,y+h),T(x,y+h)];
+          for(let k=0;k<4;k++)segs.push(q[k][0],q[k][1],q[(k+1)%4][0],q[(k+1)%4][1]);
+          cx=sx=q[0][0];cy=sy=q[0][1];
+        }
+      }
+    }
+    if(segs.length>1.2e6){cut=true;break;}
+  }
+  return{segs,extra,cut};
+}
+function buildIndex(segs,extra){
+  const C=24,gw=Math.ceil(wPt/C)+1,gh=Math.ceil(hPt/C)+1;
+  const cell=(x,y)=>clamp(Math.floor(y/C),0,gh-1)*gw+clamp(Math.floor(x/C),0,gw-1);
+  const vx=[],vy=[],vt=[],vcells=new Map(),seen=new Set(),S=[],scells=new Map();
+  const addV=(x,y,t)=>{
+    if(x<-1||y<-1||x>wPt+1||y>hPt+1)return;
+    const key=Math.round(x*20)+','+Math.round(y*20)+','+t;if(seen.has(key))return;seen.add(key);
+    const i=vx.length;vx.push(x);vy.push(y);vt.push(t);
+    const c=cell(x,y);let a=vcells.get(c);if(!a)vcells.set(c,a=[]);a.push(i);
+  };
+  for(let i=0;i<segs.length;i+=4){
+    const x0=segs[i],y0=segs[i+1],x1=segs[i+2],y1=segs[i+3],len=Math.hypot(x1-x0,y1-y0);
+    if(len<.3)continue;
+    if(Math.max(x0,x1)<0||Math.min(x0,x1)>wPt||Math.max(y0,y1)<0||Math.min(y0,y1)>hPt)continue;
+    addV(x0,y0,0);addV(x1,y1,0);if(len>4)addV((x0+x1)/2,(y0+y1)/2,1);
+    const id=S.length/4;S.push(x0,y0,x1,y1);
+    const n=Math.max(1,Math.ceil(len/(C/3)));let last=-1;
+    for(let k=0;k<=n;k++){
+      const c=cell(x0+(x1-x0)*k/n,y0+(y1-y0)*k/n);
+      if(c!==last){let a=scells.get(c);if(!a)scells.set(c,a=[]);if(a[a.length-1]!==id)a.push(id);last=c;}
+    }
+  }
+  for(let i=0;i<extra.length;i+=2)addV(extra[i],extra[i+1],0);
+  return{C,gw,gh,vx,vy,vt,vcells,S,scells,n:S.length/4};
+}
+function findSnap(p,rPx){
+  const g=geo,r=rPx/zoom,C=g.C,S=g.S;
+  const x0=Math.max(0,Math.floor((p.x-r)/C)),x1=Math.min(g.gw-1,Math.floor((p.x+r)/C));
+  const y0=Math.max(0,Math.floor((p.y-r)/C)),y1=Math.min(g.gh-1,Math.floor((p.y+r)/C));
+  let best=null,bd=Infinity;
+  const take=(x,y,kind,w)=>{const d=Math.hypot(x-p.x,y-p.y)*w;if(d<=r&&d<bd){bd=d;best={x,y,kind};}};
+  for(let cy=y0;cy<=y1;cy++)for(let cx=x0;cx<=x1;cx++){
+    const a=g.vcells.get(cy*g.gw+cx);if(!a)continue;
+    for(const i of a)take(g.vx[i],g.vy[i],g.vt[i]?'mid':'end',g.vt[i]?1.3:1);
+  }
+  const seen=new Set(),near=[];
+  for(let cy=y0;cy<=y1;cy++)for(let cx=x0;cx<=x1;cx++){
+    const a=g.scells.get(cy*g.gw+cx);if(!a)continue;
+    for(const id of a){
+      if(seen.has(id))continue;seen.add(id);
+      const j=id*4,sx=S[j],sy=S[j+1],dx=S[j+2]-sx,dy=S[j+3]-sy;
+      const t=clamp(((p.x-sx)*dx+(p.y-sy)*dy)/(dx*dx+dy*dy),0,1),qx=sx+dx*t,qy=sy+dy*t,d=Math.hypot(qx-p.x,qy-p.y);
+      if(d<=r*1.5)near.push([d,id,qx,qy]);
+    }
+  }
+  near.sort((a,b)=>a[0]-b[0]);
+  const N=Math.min(near.length,40);
+  for(let a=0;a<N;a++)for(let b=a+1;b<N;b++){
+    const i=near[a][1]*4,j=near[b][1]*4;
+    const px=S[i],py=S[i+1],rx=S[i+2]-px,ry=S[i+3]-py,qx=S[j],qy=S[j+1],sx=S[j+2]-qx,sy=S[j+3]-qy;
+    const den=rx*sy-ry*sx;
+    if(Math.abs(den)<1e-6*Math.hypot(rx,ry)*Math.hypot(sx,sy))continue;
+    const t=((qx-px)*sy-(qy-py)*sx)/den,u=((qx-px)*ry-(qy-py)*rx)/den,e=1e-6;
+    if(t<-e||t>1+e||u<-e||u>1+e)continue;
+    take(px+rx*t,py+ry*t,'int',1.05);
+  }
+  if(best)return best;
+  if(near.length&&near[0][0]<=r)return{x:near[0][2],y:near[0][3],kind:'on'};
+  return null;
+}
+function demoGeo(){
+  const u=72/25.4*10,s=[],e=[];
+  const R=(x,y,w,h)=>s.push(x,y,x+w,y, x+w,y,x+w,y+h, x+w,y+h,x,y+h, x,y+h,x,y);
+  R(28,28,wPt-56,hPt-56);R(wPt-288,hPt-118,260,90);
+  const ox=150,oy=140,W=12*u,H=8*u,t=.2*u,px=ox+5*u;
+  R(ox,oy,W,H);R(ox+t,oy+t,W-2*t,H-2*t);
+  s.push(px,oy+t,px,oy+H-2.2*u, px+.1*u,oy+t,px+.1*u,oy+H-2.2*u, px,oy+H-1.2*u,px,oy+H-t, px+.1*u,oy+H-1.2*u,px+.1*u,oy+H-t);
+  s.push(ox,oy+H+40,ox+W,oy+H+40, ox,oy+H+20,px,oy+H+20, px,oy+H+20,ox+W,oy+H+20, ox-30,oy,ox-30,oy+H);
+  e.push(px+1.1*u,oy+H-2.2*u, px+.1*u,oy+H-1.2*u);
+  return{segs:s,extra:e,cut:false};
+}
+async function loadGeo(page,tok){
+  try{
+    const r=demo?demoGeo():await extractSegs(page);
+    if(tok!==loadTok)return;
+    geo=buildIndex(r.segs,r.extra);
+    setStatus(geo.n?'สแนปเข้าเส้นในแบบได้ '+geo.n.toLocaleString('th-TH')+' เส้น'+(r.cut?' (แบบซับซ้อนมาก อ่านได้บางส่วน)':'')
+      :'หน้านี้ไม่มีเส้นเวกเตอร์ อาจเป็นภาพสแกน จึงสแนปไม่ได้ ใช้การซูมแทน');
+  }catch(e){console.error(e);if(tok===loadTok)setStatus('อ่านเส้นในแบบไม่สำเร็จ ยังวัดได้แต่สแนปไม่ได้',true);}
+}
+function paperName(){
+  const w=wPt*25.4/72,h=hPt*25.4/72,a=Math.max(w,h),b=Math.min(w,h);
+  const iso=[['A0',1189,841],['A1',841,594],['A2',594,420],['A3',420,297],['A4',297,210]];
+  for(const[n,x,y]of iso)if(Math.abs(a-x)/x<.02&&Math.abs(b-y)/y<.02)return n+' ('+x+'×'+y+' มม.)';
+  return Math.round(w)+'×'+Math.round(h)+' มม.';
+}
+
+/* ---------- loading ---------- */
+async function openFile(f){
+  if(!f)return;
+  if(!PDFJS){setStatus('โหลดตัวอ่าน PDF ไม่สำเร็จ ตรวจการเชื่อมต่ออินเทอร์เน็ตแล้วรีเฟรชหน้า',true);return;}
+  if(f.type!=='application/pdf'&&!/\.pdf$/i.test(f.name)){setStatus('รองรับเฉพาะไฟล์ PDF',true);return;}
+  setStatus('กำลังเปิด '+f.name+'…');
+  try{doc=await PDFJS.getDocument({data:await f.arrayBuffer()}).promise;}
+  catch(e){console.error(e);setStatus('เปิดไฟล์ไม่ได้ ไฟล์อาจเสียหายหรือตั้งรหัสผ่านไว้',true);return;}
+  demo=false;docName=f.name;resetDoc(doc.numPages);
+  storeKey='measure:'+((doc.fingerprints&&doc.fingerprints[0])||f.name);restore();
+  $('#fname').textContent=f.name+' ('+doc.numPages+' หน้า)';
+  await showPage(1);
+}
+function resetDoc(n){
+  for(const k in pages)delete pages[k];
+  nextId=1;sel=-1;draft=[];stopCal();
+  const s=$('#page');s.innerHTML='';for(let i=1;i<=n;i++){const o=document.createElement('option');o.value=o.textContent=i;s.appendChild(o);}
+  $('#pgwrap').classList.toggle('hidden',n<2);
+}
+function useDemo(){
+  doc=null;demo=true;docName='แบบตัวอย่าง A3 มาตราส่วน 1:100';resetDoc(1);
+  $('#fname').textContent=docName;
+  lastScale={mode:'paper',denom:100,mPerPt:100*PT_M};
+  storeKey='measure:demo';restore();
+  showPage(1);
+}
+async function showPage(n){
+  const tok=++loadTok;pg=n;draft=[];sel=-1;geo=null;
+  setStatus('กำลังเรนเดอร์แบบ…');
+  try{
+    let page=null;
+    if(demo){wPt=1190.55;hPt=841.89;}
+    else{page=await doc.getPage(n);const v=page.getViewport({scale:1});wPt=v.width;hPt=v.height;}
+    const s=Math.min(3,Math.sqrt(MAX_PX/(wPt*hPt)));
+    cv.width=Math.floor(wPt*s);cv.height=Math.floor(hPt*s);
+    const ctx=cv.getContext('2d');ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#fff';ctx.fillRect(0,0,cv.width,cv.height);
+    if(demo)drawDemo(ctx,s);
+    else await page.render({canvasContext:ctx,viewport:page.getViewport({scale:s})}).promise;
+    if(tok!==loadTok)return;
+    ov.setAttribute('viewBox','0 0 '+wPt+' '+hPt);
+    sheet.classList.remove('hidden');$('#empty').classList.add('hidden');
+    $('#calBtn').disabled=false;
+    S();syncScaleUI();fit();renderList();setStatus('กำลังอ่านเส้นในแบบเพื่อสแนป…');
+    loadGeo(page,tok);
+  }catch(e){console.error(e);if(tok===loadTok)setStatus('เรนเดอร์หน้านี้ไม่สำเร็จ',true);}
+}
+$('#file').addEventListener('change',e=>{openFile(e.target.files[0]);e.target.value='';});
+$('#page').addEventListener('change',e=>showPage(+e.target.value));
+$('#demo').onclick=useDemo;$('#demo2').onclick=useDemo;
+const drop=$('#drop');
+drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('drag');});
+drop.addEventListener('dragleave',()=>drop.classList.remove('drag'));
+drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('drag');openFile(e.dataTransfer.files[0]);});
+
+/* ---------- scale ---------- */
+function syncScaleUI(){
+  const s=S(),eq=s.mPerPt/PT_M;
+  const sel=$('#denom'),opt=[...sel.options].some(o=>o.value===String(s.denom));
+  if(s.mode==='paper'){sel.value=opt?String(s.denom):'custom';$('#customDenom').value=s.denom;$('#customWrap').classList.toggle('hidden',opt);}
+  $('#scaleNow').innerHTML=(s.mode==='paper'
+    ?'<b>1:'+s.denom+'</b> ตามขนาดกระดาษ<small>หน้านี้คือกระดาษ '+paperName()+'</small>'
+    :'<b>ปรับเทียบแล้ว</b> เทียบเท่า 1:'+(eq>=10?Math.round(eq):eq.toFixed(1))+'<small>หน้านี้คือกระดาษ '+paperName()+'</small>');
+}
+function setPaperScale(d){
+  if(!(d>0))return;
+  const s=S();s.mode='paper';s.denom=d;s.mPerPt=d*PT_M;
+  lastScale={mode:'paper',denom:d,mPerPt:s.mPerPt};
+  syncScaleUI();renderList();draw();
+}
+$('#denom').addEventListener('change',e=>{
+  if(e.target.value==='custom'){$('#customWrap').classList.remove('hidden');setPaperScale(+$('#customDenom').value);}
+  else{$('#customWrap').classList.add('hidden');setPaperScale(+e.target.value);}
+});
+$('#customDenom').addEventListener('input',e=>setPaperScale(+e.target.value));
+$('#calBtn').onclick=()=>{calibrating=true;calPts=null;draft=[];$('#calPanel').classList.remove('hidden');$('#calInputRow').classList.add('hidden');
+  $('#calMsg').textContent='คลิกจุดเริ่มและจุดสิ้นสุดของเส้นบอกระยะที่รู้ค่า';updateToolUI();draw();};
+function stopCal(){calibrating=false;calPts=null;$('#calPanel').classList.add('hidden');updateToolUI();}
+$('#calCancel').onclick=()=>{draft=[];stopCal();draw();};
+$('#calApply').onclick=()=>{
+  const real=parseFloat($('#calReal').value);
+  if(!(real>0)||!calPts){$('#calReal').focus();return;}
+  const s=S();s.mode='cal';s.mPerPt=real/dist(calPts[0],calPts[1]);s.denom=Math.round(s.mPerPt/PT_M);
+  lastScale={mode:'cal',denom:s.denom,mPerPt:s.mPerPt};
+  stopCal();syncScaleUI();renderList();draw();setStatus('ปรับเทียบมาตราส่วนแล้ว');
+};
+$('#calReal').addEventListener('keydown',e=>{if(e.key==='Enter')$('#calApply').click();});
+
+/* ---------- tools ---------- */
+function updateToolUI(){
+  document.querySelectorAll('[data-tool]').forEach(b=>b.setAttribute('aria-pressed',String(!calibrating&&b.dataset.tool===tool)));
+  const multi=!calibrating&&tool!=='distance'&&draft.length>0;
+  $('#finish').classList.toggle('hidden',!multi);$('#undo').classList.toggle('hidden',!draft.length);
+}
+document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>{tool=b.dataset.tool;draft=[];if(calibrating)stopCal();updateToolUI();draw();});
+$('#ortho').onclick=()=>{ortho=!ortho;$('#ortho').setAttribute('aria-pressed',String(ortho));};
+$('#snapBtn').onclick=()=>{snapOn=!snapOn;$('#snapBtn').setAttribute('aria-pressed',String(snapOn));schedule();};
+$('#finish').onclick=finish;
+$('#undo').onclick=()=>{draft.pop();updateToolUI();draw();};
+function addPoint(p){
+  if(!wPt)return;
+  const q=resolve(p,lastPtr==='mouse'?12:24);draft.push({x:q.x,y:q.y});
+  if(calibrating&&draft.length===2){
+    calPts=draft.slice();draft=[];
+    $('#calMsg').textContent='เส้นที่เลือกยาว '+(dist(calPts[0],calPts[1])*PT_M*1000).toFixed(1)+' มม. บนกระดาษ ระยะจริงเท่าไร';
+    $('#calInputRow').classList.remove('hidden');$('#calReal').focus();
+  }else if(!calibrating&&tool==='distance'&&draft.length===2)finish();
+  updateToolUI();draw();
+}
+function finish(){
+  if(calibrating)return;
+  const need=tool==='area'?3:2;
+  if(draft.length<need){setStatus(tool==='area'?'พื้นที่ต้องมีอย่างน้อย 3 จุด':'ต้องมีอย่างน้อย 2 จุด',true);return;}
+  const s=S(),n=s.items.filter(i=>i.type===tool).length+1;
+  s.items.push({id:nextId++,type:tool,pts:draft.slice(),name:KIND[tool]+' '+n});
+  sel=s.items.length-1;draft=[];setStatus('');updateToolUI();renderList();draw();
+}
+
+/* ---------- pointer ---------- */
+function toPt(e){const r=sheet.getBoundingClientRect();return{x:(e.clientX-r.left)/r.width*wPt,y:(e.clientY-r.top)/r.height*hPt};}
+let pan=null,suppress=false,raf=0;
+viewer.addEventListener('pointerdown',e=>{
+  if(e.pointerType!=='mouse'||(e.button!==0&&e.button!==1))return;
+  pan={x:e.clientX,y:e.clientY,l:viewer.scrollLeft,t:viewer.scrollTop,moved:false};
+});
+window.addEventListener('pointermove',e=>{
+  if(pan){const dx=e.clientX-pan.x,dy=e.clientY-pan.y;
+    if(!pan.moved&&Math.hypot(dx,dy)>5){pan.moved=true;sheet.classList.add('panning');}
+    if(pan.moved){viewer.scrollLeft=pan.l-dx;viewer.scrollTop=pan.t-dy;return;}}
+  if(e.pointerType==='mouse'&&wPt&&e.target.closest&&e.target.closest('#sheet')){hover=toPt(e);schedule();}
+});
+window.addEventListener('pointerup',()=>{if(pan&&pan.moved)suppress=true;pan=null;sheet.classList.remove('panning');});
+sheet.addEventListener('pointerleave',()=>{hover=null;schedule();});
+sheet.addEventListener('pointerdown',e=>{lastPtr=e.pointerType||'mouse';});
+sheet.addEventListener('click',e=>{if(suppress){suppress=false;return;}addPoint(toPt(e));});
+sheet.addEventListener('dblclick',e=>{
+  e.preventDefault();
+  if(draft.length>=2&&dist(draft[draft.length-1],draft[draft.length-2])*zoom<6)draft.pop();
+  if(!calibrating&&tool!=='distance')finish();
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Shift'){shift=true;schedule();}
+  if(e.target.matches('input,select'))return;
+  if(e.key==='Enter')finish();
+  else if(e.key==='Escape'){draft=[];if(calibrating)stopCal();updateToolUI();draw();}
+  else if(e.key==='Backspace'&&draft.length){e.preventDefault();draft.pop();updateToolUI();draw();}
+  else if((e.key==='Delete'||e.key==='Backspace')&&sel>=0){e.preventDefault();removeItem(sel);}
+});
+document.addEventListener('keyup',e=>{if(e.key==='Shift'){shift=false;schedule();}});
+function schedule(){if(!raf)raf=requestAnimationFrame(()=>{raf=0;draw();});}
+
+/* ---------- drawing ---------- */
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function label(x,y,t,col,fs){return '<text class="lbl" x="'+x+'" y="'+y+'" font-size="'+fs+'" fill="'+col+'" stroke-width="'+(fs*.28)+'" text-anchor="middle" dominant-baseline="middle">'+esc(t)+'</text>';}
+function draw(){
+  if(!wPt){ov.innerHTML='';return;}
+  const k=zoom,fs=13/k,r=3.5/k,sw='vector-effect="non-scaling-stroke"';let h='';
+  const pts=p=>p.map(q=>q.x+','+q.y).join(' ');
+  const dots=(p,c)=>p.map(q=>'<circle cx="'+q.x+'" cy="'+q.y+'" r="'+r+'" fill="#fff" stroke="'+c+'" stroke-width="1.5" '+sw+'/>').join('');
+  S().items.forEach((it,i)=>{
+    const c=COL[it.type],w=i===sel?3.5:2,val=value(it);
+    if(it.type==='area'){
+      h+='<polygon points="'+pts(it.pts)+'" fill="'+c+'" fill-opacity="'+(i===sel?.22:.12)+'" stroke="'+c+'" stroke-width="'+w+'" '+sw+'/>';
+      const ct=centroid(it.pts);h+=label(ct.x,ct.y-fs*.65,it.name,c,fs)+label(ct.x,ct.y+fs*.75,fmt(val.v)+' '+val.u,c,fs*1.1);
+    }else{
+      h+='<polyline points="'+pts(it.pts)+'" fill="none" stroke="'+c+'" stroke-width="'+w+'" '+sw+'/>';
+      const j=Math.floor((it.pts.length-1)/2),a=it.pts[j],b=it.pts[j+1];
+      h+=label((a.x+b.x)/2,(a.y+b.y)/2-fs*.9,fmt(val.v)+' '+val.u,c,fs*1.1);
+    }
+    h+=dots(it.pts,c);
+  });
+  if(calibrating&&calPts){h+='<line x1="'+calPts[0].x+'" y1="'+calPts[0].y+'" x2="'+calPts[1].x+'" y2="'+calPts[1].y+'" stroke="'+COL.cal+'" stroke-width="2.5" '+sw+'/>'+dots(calPts,COL.cal);}
+  const c=calibrating?COL.cal:COL[tool],hp=hover?resolve(hover,12):null;
+  let live='';
+  if(draft.length){
+    const all=hp?[...draft,{x:hp.x,y:hp.y}]:draft;
+    if(tool==='area'&&!calibrating&&all.length>2)h+='<polygon points="'+pts(all)+'" fill="'+c+'" fill-opacity=".08" stroke="none"/>';
+    h+='<polyline points="'+pts(all)+'" fill="none" stroke="'+c+'" stroke-width="2" stroke-dasharray="6 4" '+sw+'/>';
+    if(tool==='area'&&!calibrating&&all.length>2){const f=all[0],l=all[all.length-1];h+='<line x1="'+l.x+'" y1="'+l.y+'" x2="'+f.x+'" y2="'+f.y+'" stroke="'+c+'" stroke-width="1" stroke-dasharray="3 4" '+sw+'/>';}
+    h+=dots(draft,c);
+    if(calibrating)live=(pathLen(all)*PT_M*1000).toFixed(1)+' มม. บนกระดาษ';
+    else if(tool==='area'&&all.length>2)live=fmt(polyArea(all)*S().mPerPt**2)+' ตร.ม.';
+    else live=fmt(pathLen(all)*S().mPerPt)+' ม.';
+    if(hp&&all.length>1){const a=all[all.length-2];h+=label((a.x+hp.x)/2,(a.y+hp.y)/2-fs*.9,fmt(dist(a,hp)*S().mPerPt)+' ม.',c,fs);}
+  }
+  if(hp&&!pan){
+    const q=hp,L=10/k;h+='<path d="M'+(q.x-L)+' '+q.y+'H'+(q.x+L)+'M'+q.x+' '+(q.y-L)+'V'+(q.y+L)+'" stroke="'+c+'" stroke-width="1" '+sw+'/>';
+    if(q.kind){
+      const m=6/k,g='#0A9E6E';
+      if(q.kind==='end')h+='<rect x="'+(q.x-m)+'" y="'+(q.y-m)+'" width="'+2*m+'" height="'+2*m+'" fill="none" stroke="'+g+'" stroke-width="2" '+sw+'/>';
+      else if(q.kind==='mid')h+='<path d="M'+q.x+' '+(q.y-m*1.2)+'L'+(q.x+m*1.1)+' '+(q.y+m*.8)+'L'+(q.x-m*1.1)+' '+(q.y+m*.8)+'Z" fill="none" stroke="'+g+'" stroke-width="2" '+sw+'/>';
+      else if(q.kind==='on')h+='<circle cx="'+q.x+'" cy="'+q.y+'" r="'+m*.9+'" fill="none" stroke="'+g+'" stroke-width="2" '+sw+'/>';
+      else h+='<path d="M'+(q.x-m)+' '+(q.y-m)+'L'+(q.x+m)+' '+(q.y+m)+'M'+(q.x+m)+' '+(q.y-m)+'L'+(q.x-m)+' '+(q.y+m)+'" stroke="'+g+'" stroke-width="2" '+sw+'/>';
+      h+='<text class="lbl" x="'+(q.x+m*1.6)+'" y="'+(q.y+m*2.6)+'" font-size="'+(11/k)+'" fill="'+g+'" stroke-width="'+(3/k)+'">'+SNAPNAME[q.kind]+'</text>';
+    }
+  }
+  ov.innerHTML=h;$('#readout').textContent=live;
+}
+function renderList(){
+  const ul=$('#list'),s=S();ul.innerHTML='';
+  $('#emptyList').classList.toggle('hidden',s.items.length>0);
+  let L=0,A=0;
+  s.items.forEach((it,i)=>{
+    const v=value(it);if(it.type==='area')A+=v.v;else L+=v.v;
+    const li=document.createElement('li');if(i===sel)li.className='sel';
+    const c=COL[it.type];
+    li.innerHTML=(it.type==='area'?'<svg class="glyph" viewBox="0 0 14 14"><rect x="1.5" y="1.5" width="11" height="11" fill="'+c+'" fill-opacity=".25" stroke="'+c+'" stroke-width="1.5"/></svg>'
+      :'<svg class="glyph" viewBox="0 0 14 14"><path d="M1 12 L7 4 L13 9" fill="none" stroke="'+c+'" stroke-width="2"/></svg>')
+      +'<input type="text" aria-label="ชื่อรายการ" value="'+esc(it.name)+'"><span class="val">'+fmt(v.v)+' '+v.u+'</span><button class="del" aria-label="ลบรายการ">✕</button>';
+    li.onclick=e=>{if(e.target.closest('.del')||e.target.tagName==='INPUT')return;sel=i;renderList();draw();};
+    const inp=li.querySelector('input');inp.onfocus=()=>{sel=i;draw();[...ul.children].forEach((x,j)=>x.classList.toggle('sel',j===i));};
+    inp.oninput=()=>{it.name=inp.value;draw();save();};
+    li.querySelector('.del').onclick=()=>removeItem(i);
+    ul.appendChild(li);
+  });
+  const t=$('#totals');t.classList.toggle('hidden',!s.items.length);
+  t.innerHTML=(L?'<div><span>ความยาวรวมหน้านี้</span><b>'+fmt(L)+' ม.</b></div>':'')+(A?'<div><span>พื้นที่รวมหน้านี้</span><b>'+fmt(A)+' ตร.ม.</b></div>':'');
+  $('#csv').disabled=!Object.values(pages).some(p=>p.items.length);
+  $('#clear').disabled=$('#csv').disabled;
+  save();
+}
+function removeItem(i){S().items.splice(i,1);sel=-1;renderList();draw();}
+$('#dec').addEventListener('change',()=>{renderList();draw();});
+
+/* ---------- zoom ---------- */
+function applyZoom(){sheet.style.width=wPt*zoom+'px';sheet.style.height=hPt*zoom+'px';$('#zoomv').textContent=Math.round(zoom*100)+'%';draw();}
+const fitZoom=()=>wPt?Math.min((viewer.clientWidth-32)/wPt,(viewer.clientHeight-32)/hPt):1;
+function fit(){zoom=fitZoom();applyZoom();viewer.scrollTo(0,0);}
+function zoomAt(f,cx,cy){
+  if(!wPt)return;
+  const r=viewer.getBoundingClientRect();cx=cx??r.left+r.width/2;cy=cy??r.top+r.height/2;
+  const sr=sheet.getBoundingClientRect(),px=(cx-sr.left)/zoom,py=(cy-sr.top)/zoom;
+  zoom=clamp(zoom*f,Math.min(fitZoom(),.1),12);applyZoom();
+  const nr=sheet.getBoundingClientRect();
+  viewer.scrollLeft+=nr.left+px*zoom-cx;viewer.scrollTop+=nr.top+py*zoom-cy;
+}
+$('#zin').onclick=()=>zoomAt(1.4);$('#zout').onclick=()=>zoomAt(1/1.4);$('#zfit').onclick=fit;
+viewer.addEventListener('wheel',e=>{if(e.ctrlKey||e.metaKey){e.preventDefault();zoomAt(e.deltaY<0?1.15:1/1.15,e.clientX,e.clientY);}},{passive:false});
+window.addEventListener('resize',()=>{if(wPt&&zoom<fitZoom())fit();});
+
+/* ---------- autosave ---------- */
+function save(){
+  if(!storeKey)return;
+  clearTimeout(saveT);
+  saveT=setTimeout(()=>{try{localStorage.setItem(storeKey,JSON.stringify({v:1,nextId,lastScale,pages}));}catch(e){}},300);
+}
+function restore(){
+  try{
+    const raw=localStorage.getItem(storeKey);if(!raw)return;
+    const d=JSON.parse(raw);if(!d||d.v!==1||!d.pages)return;
+    for(const k in d.pages){const p=d.pages[k];if(p&&Array.isArray(p.items)&&p.mPerPt>0)pages[k]=p;}
+    nextId=d.nextId||1;if(d.lastScale&&d.lastScale.mPerPt>0)lastScale=d.lastScale;
+  }catch(e){}
+}
+let clearArm=0;
+$('#clear').onclick=()=>{
+  const b=$('#clear');
+  if(!clearArm){b.textContent='กดอีกครั้งเพื่อยืนยัน';clearArm=setTimeout(()=>{clearArm=0;b.textContent='ล้างทั้งหมด';},3000);return;}
+  clearTimeout(clearArm);clearArm=0;b.textContent='ล้างทั้งหมด';
+  for(const k in pages)pages[k].items=[];
+  sel=-1;draft=[];updateToolUI();renderList();draw();
+};
+
+/* ---------- export ---------- */
+async function exportCsv(){
+  const q=v=>'"'+String(v).replace(/"/g,'""')+'"';
+  const rows=[['หน้า','ชื่อ','ประเภท','ค่า','หน่วย','เส้นรอบรูป (ม.)','มาตราส่วน'].map(q).join(',')];
+  Object.keys(pages).map(Number).sort((a,b)=>a-b).forEach(p=>{
+    const s=pages[p],sc=s.mode==='paper'?'1:'+s.denom:'ปรับเทียบ (≈1:'+s.denom+')';
+    s.items.forEach(it=>{const m=s.mPerPt,isA=it.type==='area';
+      const v=isA?polyArea(it.pts)*m*m:pathLen(it.pts)*m,per=isA?pathLen([...it.pts,it.pts[0]])*m:'';
+      rows.push([p,it.name,KIND[it.type],v.toFixed(dec()),isA?'ตร.ม.':'ม.',per===''?'':per.toFixed(dec()),sc].map(q).join(','));});
+  });
+  const data='\ufeff'+rows.join('\r\n'),fn='measure-'+new Date().toISOString().slice(0,10)+'.csv';
+  try{await TS.save(fn,data);setStatus('บันทึกไฟล์ CSV แล้ว');}catch(e){console.error(e);setStatus('บันทึกไฟล์ไม่สำเร็จ',true);}
+}
+$('#csv').onclick=exportCsv;
+
+/* ---------- demo sheet: A3, 1:100 ---------- */
+function drawDemo(x,s){
+  const u=72/25.4*10; // 1 m at 1:100 = 10 mm on paper, in points
+  x.save();x.scale(s,s);x.strokeStyle='#000';x.fillStyle='#000';
+  x.lineWidth=1.4;x.strokeRect(28,28,wPt-56,hPt-56);x.strokeRect(wPt-288,hPt-118,260,90);
+  x.font='600 13px "IBM Plex Sans Thai",sans-serif';x.fillText('บ้านพักอาศัย – แปลนพื้นชั้น 1',wPt-276,hPt-90);
+  x.font='12px "IBM Plex Sans Thai",sans-serif';x.fillText('มาตราส่วน 1:100  กระดาษ A3',wPt-276,hPt-66);x.fillText('A-101',wPt-276,hPt-42);
+  const ox=150,oy=140,W=12*u,H=8*u,t=.2*u;
+  x.lineWidth=1.6;x.strokeRect(ox,oy,W,H);x.strokeRect(ox+t,oy+t,W-2*t,H-2*t);
+  const px=ox+5*u;x.beginPath();x.moveTo(px,oy+t);x.lineTo(px,oy+H-2.2*u);x.moveTo(px+.1*u,oy+t);x.lineTo(px+.1*u,oy+H-2.2*u);
+  x.moveTo(px,oy+H-1.2*u);x.lineTo(px,oy+H-t);x.moveTo(px+.1*u,oy+H-1.2*u);x.lineTo(px+.1*u,oy+H-t);x.stroke();
+  x.lineWidth=.8;x.beginPath();x.arc(px+.1*u,oy+H-2.2*u,u,0,Math.PI/2);x.stroke();
+  x.font='13px "IBM Plex Sans Thai",sans-serif';x.fillText('ห้องนอน',ox+2*u,oy+4*u);x.fillText('ห้องนั่งเล่น',ox+8*u,oy+4*u);
+  const dim=(x0,y0,x1,y1,txt,vert)=>{x.lineWidth=.6;x.beginPath();x.moveTo(x0,y0);x.lineTo(x1,y1);
+    for(const[a,b]of[[x0,y0],[x1,y1]]){x.moveTo(a-4,b+4);x.lineTo(a+4,b-4);}x.stroke();
+    x.save();x.font='12px "IBM Plex Sans Thai",sans-serif';x.textAlign='center';
+    if(vert){x.translate(x0-6,(y0+y1)/2);x.rotate(-Math.PI/2);x.fillText(txt,0,0);}else x.fillText(txt,(x0+x1)/2,y0-6);x.restore();};
+  dim(ox,oy+H+40,ox+W,oy+H+40,'12.00');dim(ox,oy+H+20,px,oy+H+20,'5.00');dim(px,oy+H+20,ox+W,oy+H+20,'7.00');dim(ox-30,oy,ox-30,oy+H,'8.00',true);
+  x.restore();
+}
+if(!PDFJS)setStatus('โหลดตัวอ่าน PDF ไม่สำเร็จ ตรวจการเชื่อมต่ออินเทอร์เน็ตแล้วรีเฟรชหน้า (ยังลองแบบตัวอย่างได้)',true);
+})();
+</script>
+</body>
+</html>

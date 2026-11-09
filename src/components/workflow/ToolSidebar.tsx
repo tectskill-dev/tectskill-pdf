@@ -181,6 +181,9 @@ export function ToolSidebar({
 
         // Tools that require interactive UI and should be excluded from workflow
         const interactiveToolsBlacklist = new Set([
+            // TectSkill PDF: architect tools are interactive embedded apps
+            'revision-compare', 'measure-pdf-scale', 'sheet-set-builder', 'stamp-drawings',
+            'markup-drawings', 'compress-drawings', 'print-to-scale',
             'pdf-multi-tool',    // Interactive multi-tool
             'edit-pdf',          // Canvas editor required
             'sign-pdf',          // Signature drawing required

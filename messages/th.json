@@ -965,6 +965,10 @@
       "downloadStartedNotice": "เปิดการดาวน์โหลดในเบราว์เซอร์แล้ว! หากไม่เริ่ม คลิกปุ่มคัดลอกแล้ววางในเบราว์เซอร์",
       "downloadFailedNotice": "เปิดเบราว์เซอร์อัตโนมัติไม่ได้ กรุณาคลิกคัดลอกแล้ววางลิงก์ในเบราว์เซอร์เอง",
       "linkCopied": "คัดลอกลิงก์ดาวน์โหลดแล้ว!"
+    },
+    "archTools": {
+      "fullscreen": "เต็มจอ",
+      "exitFullscreen": "ย่อหน้าต่าง"
     }
   },
   "toolsPage": {
@@ -1261,7 +1265,8 @@
       "convertFromPdf": "แปลง PDF เป็นไฟล์รูปแบบอื่น",
       "organizeManage": "จัดเรียง รวม แยก และจัดการหน้า PDF",
       "optimizeRepair": "บีบอัด ปรับแต่ง และซ่อมแซมไฟล์ PDF",
-      "securePdf": "เข้ารหัส ปลดล็อก และป้องกันไฟล์ PDF"
+      "securePdf": "เข้ารหัส ปลดล็อก และป้องกันไฟล์ PDF",
+      "architect": "เทียบแบบ วัดตามสเกล รวมชุดแบบ ประทับตรา และตรวจแบบ PDF"
     },
     "stats": {
       "pdfTools": "เครื่องมือ PDF",
@@ -1276,7 +1281,8 @@
       "convertFromPdf": "แปลงจาก PDF",
       "organizeManage": "จัดเรียงและจัดการ",
       "optimizeRepair": "ปรับแต่งและซ่อมแซม",
-      "securePdf": "ความปลอดภัย PDF"
+      "securePdf": "ความปลอดภัย PDF",
+      "architect": "สำหรับสถาปนิก"
     }
   },
   "workflow": {

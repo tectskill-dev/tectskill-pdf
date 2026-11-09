@@ -33,6 +33,7 @@ export const Navigation: React.FC<NavigationProps> = ({ locale, currentPath }) =
     { id: 'organize-manage', labelKey: 'organizeManage', href: `/${locale}/tools?category=organize-manage` },
     { id: 'optimize-repair', labelKey: 'optimizeRepair', href: `/${locale}/tools?category=optimize-repair` },
     { id: 'secure-pdf', labelKey: 'securePdf', href: `/${locale}/tools?category=secure-pdf` },
+    { id: 'architect', labelKey: 'architect', href: `/${locale}/tools?category=architect` },
   ];
 
   const mainNavItems = [

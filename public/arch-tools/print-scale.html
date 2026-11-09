@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>พิมพ์ย่อตามสเกล – Print to Scale | TectSkill</title>
+<meta name="description" content="ย่อแบบ A1 เป็น A3 พร้อมคำนวณมาตราส่วนใหม่และ bar scale หรือแบ่งพิมพ์ 1:1 หลายแผ่น ฟรี">
+<link href="fonts/fonts.css" rel="stylesheet">
+<style>
+:root{
+  --bg:#E9ECEB; --panel:#F7F8F7; --ink:#1C2427; --muted:#5B676C; --line:#C9D0CF;
+  --accent:#1670C2; --warn:#D02438; --btn:#1C2427; --btn-ink:#F7F8F7; --row:#fff; --grid:rgba(28,36,39,.06);
+  color-scheme:light; box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#141A1C; --panel:#1C2427; --ink:#E6EBEA; --muted:#98A4A8; --line:#2F3A3E; --accent:#4FA3F0; --warn:#FF5A6A;
+    --btn:#E6EBEA; --btn-ink:#141A1C; --row:#1C2427; --grid:rgba(230,235,234,.05); color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141A1C; --panel:#1C2427; --ink:#E6EBEA; --muted:#98A4A8; --line:#2F3A3E; --accent:#4FA3F0; --warn:#FF5A6A;
+  --btn:#E6EBEA; --btn-ink:#141A1C; --row:#1C2427; --grid:rgba(230,235,234,.05); color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.6 "IBM Plex Sans Thai",system-ui,-apple-system,"Segoe UI",sans-serif}
+.app{display:grid;grid-template-columns:340px 1fr;height:100%}
+aside{background:var(--panel);border-right:1px solid var(--line);overflow-y:auto;padding:20px 18px 28px}
+h1{font-size:22px;line-height:1.25;font-weight:600;margin:0 0 4px}
+.lede{color:var(--muted);font-size:13.5px;margin:0 0 16px}
+h2{font-size:14px;font-weight:600;margin:20px 0 8px}
+label.blk{display:block;font-size:13px;color:var(--muted);margin:10px 0 3px}
+select,input[type=number]{font:inherit;font-size:13.5px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:5px 8px;width:100%}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.drop{border:1.5px dashed var(--line);border-radius:10px;padding:12px;text-align:center;font-size:13.5px;color:var(--muted)}
+.drop.drag{border-color:var(--ink);background:var(--grid)}
+.file-btn{display:inline-block;cursor:pointer;font-size:13.5px;padding:5px 12px;border-radius:7px;border:1px solid var(--line);color:var(--ink);margin-top:6px}
+.file-btn:hover{border-color:var(--ink)}
+.file-btn input{position:absolute;width:1px;height:1px;opacity:0}
+.file-btn:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+#files{list-style:none;padding:0;margin:8px 0 0;font-size:13px}
+#files li{display:flex;gap:8px;align-items:center;padding:3px 0}
+#files li span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#files button{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:15px}
+#files button:hover{color:var(--warn)}
+.mode{display:grid;gap:6px}
+.mode label{display:grid;grid-template-columns:18px 1fr;gap:2px 8px;border:1px solid var(--line);border-radius:9px;padding:8px 10px;cursor:pointer;font-size:13.5px}
+.mode label:has(input:checked){border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.mode input{accent-color:var(--ink);margin-top:4px}
+.mode small{grid-column:2;color:var(--muted);font-size:12.5px;line-height:1.4}
+.check{display:flex;align-items:flex-start;gap:9px;font-size:13.5px;margin:8px 0;cursor:pointer}
+.check input{accent-color:var(--ink);width:16px;height:16px;margin-top:3px;flex:none}
+.check small{display:block;color:var(--muted);font-size:12.5px;line-height:1.4}
+.btn{font:inherit;font-weight:500;font-size:14px;border:0;border-radius:8px;padding:9px 14px;background:var(--btn);color:var(--btn-ink);cursor:pointer}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn.wide{width:100%;margin-top:14px}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#status{font-size:13px;color:var(--muted);min-height:1.6em;margin-top:8px}
+#status.err{color:var(--warn)}
+.hint{font-size:12.5px;color:var(--muted);margin:8px 0 0}
+main{display:flex;flex-direction:column;min-width:0;min-height:0}
+.bar{display:flex;gap:10px;align-items:center;padding:8px 14px;border-bottom:1px solid var(--line);background:var(--panel);flex-wrap:wrap;font-size:13px}
+.bar select{width:auto;max-width:240px;padding:3px 6px}
+.bar .sp{flex:1}
+.split{flex:1;display:grid;grid-template-rows:1fr auto;min-height:0}
+#pv{overflow:auto;display:flex;padding:16px;min-height:0;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:24px 24px}
+#pvc{margin:auto;display:block;background:#fff;box-shadow:0 0 0 1px var(--line),0 6px 18px rgba(0,0,0,.08)}
+#tbl{max-height:36vh;overflow:auto;border-top:1px solid var(--line);background:var(--panel)}
+table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:6px 14px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-weight:600;color:var(--muted);position:sticky;top:0;background:var(--panel)}
+td.big{font-weight:600}
+.empty{margin:auto;text-align:center;max-width:400px;color:var(--muted);font-size:14px}
+.empty strong{display:block;color:var(--ink);font-size:17px;font-weight:600;margin-bottom:6px}
+.empty .btn{margin-top:14px}
+.hidden{display:none!important}
+@media (max-width:820px){
+  .app{grid-template-columns:1fr;height:auto}
+  aside{border-right:0;border-bottom:1px solid var(--line)}
+  main{height:80vh;height:80svh}
+}
+</style>
+<script src="brand.js" data-tool="print-scale"></script>
+</head>
+<body>
+<div class="app">
+<aside>
+  <h1>พิมพ์ย่อตามสเกล</h1>
+  <p class="lede">ย่อแบบ A1 ลง A3 หรือขนาดใดก็ได้ พร้อมคำนวณมาตราส่วนใหม่ เพิ่ม bar scale หรือแบ่งพิมพ์ 1:1 หลายแผ่นเพื่อต่อกัน ไฟล์ประมวลผลในเครื่องคุณเท่านั้น</p>
+  <div class="drop" id="drop">ลากไฟล์ PDF มาวาง หรือ<br>
+    <label class="file-btn">เลือกไฟล์ PDF<input type="file" accept="application/pdf,.pdf" id="file" multiple></label>
+  </div>
+  <ul id="files"></ul>
+  <div id="status" role="status" aria-live="polite"></div>
+
+  <h2>วิธีพิมพ์</h2>
+  <div class="mode" role="radiogroup" aria-label="วิธีพิมพ์">
+    <label><input type="radio" name="mode" value="fit" checked><span>ย่อ/ขยายลงกระดาษ</span><small>ทั้งแผ่นอยู่ในหน้าเดียว มาตราส่วนเปลี่ยน</small></label>
+    <label><input type="radio" name="mode" value="tile"><span>แบ่งพิมพ์หลายแผ่น 1:1</span><small>คงมาตราส่วนเดิม พิมพ์ลงกระดาษเล็กหลายแผ่นแล้วต่อกัน</small></label>
+  </div>
+
+  <div class="two">
+    <div><label class="blk" for="paper">กระดาษปลายทาง</label>
+      <select id="paper"><option value="A0">A0</option><option value="A1">A1</option><option value="A2">A2</option><option value="A3" selected>A3</option><option value="A4">A4</option></select></div>
+    <div><label class="blk" for="margin">ขอบกระดาษ (มม.)</label><input type="number" id="margin" value="8" min="0" max="40"></div>
+  </div>
+  <label class="blk" for="orig">มาตราส่วนที่ระบุในแบบเดิม</label>
+  <select id="orig">
+    <option value="0">ไม่ระบุ / หลายมาตราส่วน</option>
+    <option>20</option><option>25</option><option>50</option><option>75</option><option selected>100</option><option>150</option><option>200</option><option>250</option><option>500</option><option>1000</option>
+  </select>
+
+  <div id="fitOpts">
+    <label class="check"><input type="checkbox" id="full" checked><span>ขยายเต็มกระดาษ ไม่เว้นขอบ<small>A1→A3 ได้ 50% พอดี (1:100 เป็น 1:200) ข้อความและ bar scale จะวางทับขอบล่างของแบบ</small></span></label>
+    <label class="check"><input type="checkbox" id="snap" checked><span>ปัดเป็นมาตราส่วนมาตรฐาน<small>เช่น ได้ 1:213 จะใช้ 1:250 แทน เพื่อให้วัดด้วยไม้สเกลได้</small></span></label>
+    <label class="check"><input type="checkbox" id="barOn" checked><span>เพิ่ม bar scale<small>ถูกต้องเสมอแม้ถูกย่อซ้ำอีกครั้งภายหลัง</small></span></label>
+    <label class="check"><input type="checkbox" id="noteOn" checked><span>ระบุมาตราส่วนใหม่ที่ขอบกระดาษ</span></label>
+  </div>
+  <div id="tileOpts" class="hidden">
+    <label class="blk" for="overlap">ระยะซ้อนทับสำหรับต่อกระดาษ (มม.)</label><input type="number" id="overlap" value="10" min="0" max="50">
+  </div>
+  <button class="btn wide" id="go" disabled>สร้างไฟล์สำหรับพิมพ์</button>
+  <p class="hint">สั่งพิมพ์ไฟล์ที่ได้ที่ “ขนาดจริง 100%” ห้ามเลือก “พอดีกระดาษ” มิฉะนั้นมาตราส่วนจะคลาดเคลื่อน</p>
+</aside>
+
+<main>
+  <div class="bar">
+    ตัวอย่าง <select id="pvFile" aria-label="ไฟล์"></select>
+    หน้า <select id="pvPage" aria-label="หน้าผลลัพธ์"></select>
+    <span class="sp"></span><span id="pvNote"></span>
+  </div>
+  <div class="split">
+    <div id="pv">
+      <canvas id="pvc" class="hidden"></canvas>
+      <div class="empty" id="empty"><strong>เพิ่มไฟล์แบบเพื่อดูตัวอย่าง</strong>ระบบตรวจขนาดกระดาษเดิมของแต่ละแผ่น แล้วคำนวณสัดส่วนและมาตราส่วนใหม่ให้<br><button class="btn ghost" id="demo">ลองกับแบบ A1 ตัวอย่าง</button></div>
+    </div>
+    <div id="tbl" class="hidden"></div>
+  </div>
+</main>
+</div>
+
+<script src="vendor/pdf.min.js"></script>
+<script src="vendor/pdf.worker.min.js"></script>
+<script src="vendor/pdf-lib.min.js"></script>
+<script src="vendor/jszip.min.js"></script>
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const PDFJS=window.pdfjsLib||null;
+if(PDFJS)PDFJS.GlobalWorkerOptions.workerSrc='vendor/pdf.worker.min.js';
+const setStatus=(t,err)=>{const s=$('#status');s.textContent=t;s.classList.toggle('err',!!err);};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const MM=72/25.4,F='"IBM Plex Sans Thai",sans-serif';
+const ISO={A0:[1189,841],A1:[841,594],A2:[594,420],A3:[420,297],A4:[297,210]};
+const STD=[1,2,5,10,20,25,50,75,100,125,150,200,250,300,400,500,750,1000,1250,1500,2000,2500,5000,10000];
+let files=[],uid=1;
+
+function paperName(wMm,hMm){
+  const a=Math.max(wMm,hMm),b=Math.min(wMm,hMm);
+  for(const[n,[x,y]]of Object.entries(ISO))if(Math.abs(a-x)/x<.03&&Math.abs(b-y)/y<.03)return n;
+  return Math.round(wMm)+'×'+Math.round(hMm);
+}
+const pct=f=>(f*100).toLocaleString('th-TH',{maximumFractionDigits:1})+'%';
+const opt=()=>({mode:document.querySelector('input[name=mode]:checked').value,paper:$('#paper').value,margin:Math.max(0,+$('#margin').value||0),
+  orig:+$('#orig').value,full:$('#full').checked,snap:$('#snap').checked,bar:$('#barOn').checked,note:$('#noteOn').checked,overlap:Math.max(0,+$('#overlap').value||0)});
+
+/* ---------- planning ---------- */
+function planFit(VW,VH,o){
+  const [pa,pb]=ISO[o.paper],land=VW>=VH,PW=(land?pa:pb)*MM,PH=(land?pb:pa)*MM;
+  const want=o.note||(o.bar&&o.orig),strip=want&&!o.full?9*MM:0,m=o.full?0:o.margin*MM;
+  const aw=PW-2*m,ah=PH-2*m-strip;
+  let f=Math.min(aw/VW,ah/VH),den=null,snapped=false;
+  if(o.orig){den=o.orig/f;
+    if(o.snap){const exact=den,s=STD.find(v=>v>=exact*.994)||exact;if(Math.abs(s-exact)/exact>.005){den=s;f=o.orig/s;snapped=true;}else{den=s;f=o.orig/s;}}}
+  const w=VW*f,h=VH*f,x=(PW-w)/2,y=m+strip+(ah-h)/2;
+  return{PW,PH,f,den,snapped,x,y,w,h,strip:want?1:0,m,full:o.full};
+}
+function planTile(VW,VH,o){
+  const [pa,pb]=ISO[o.paper],m=o.margin*MM,ov=o.overlap*MM,labelH=7*MM;
+  const best=[true,false].map(land=>{
+    const PW=(land?pa:pb)*MM,PH=(land?pb:pa)*MM,aw=PW-2*m,ah=PH-2*m-labelH;
+    const cols=Math.max(1,Math.ceil((VW-ov)/(aw-ov))),rows=Math.max(1,Math.ceil((VH-ov)/(ah-ov)));
+    return{PW,PH,aw,ah,cols,rows,n:cols*rows,m,ov,labelH};
+  }).sort((a,b)=>a.n-b.n)[0];
+  return best;
+}
+
+/* ---------- canvas text image ---------- */
+async function textPng(out,text,hMm){
+  const k=12,fs=hMm*.62,c=document.createElement('canvas'),x=c.getContext('2d');
+  x.font='500 '+fs*k+'px '+F;const w=x.measureText(text).width/k+1;
+  c.width=Math.ceil(w*k);c.height=Math.ceil(hMm*k);x.font='500 '+fs*k+'px '+F;x.fillStyle='#1C2427';x.textBaseline='middle';x.fillText(text,0,c.height/2);
+  const b=await new Promise(r=>c.toBlob(bl=>bl.arrayBuffer().then(r),'image/png'));
+  return{img:await out.embedPng(b),wMm:w,hMm};
+}
+
+/* ---------- build ---------- */
+async function build(file,o,onlyFirst){
+  const{PDFDocument,degrees,rgb,StandardFonts}=PDFLib;
+  const src=await PDFDocument.load(file.bytes,{ignoreEncryption:true}),out=await PDFDocument.create();
+  out.setProducer(TS.producer);out.setCreator(TS.producer);
+  const font=await out.embedFont(StandardFonts.Helvetica),bold=await out.embedFont(StandardFonts.HelveticaBold);
+  const rows=[],srcPages=src.getPages(),list=onlyFirst?[srcPages[onlyFirst-1]]:srcPages;
+  for(const sp of list){
+    const cb=sp.getCropBox(),rot=((sp.getRotation().angle%360)+360)%360,W=cb.width,H=cb.height,VW=rot%180?H:W,VH=rot%180?W:H;
+    const e=await out.embedPage(sp,{left:cb.x,bottom:cb.y,right:cb.x+W,top:cb.y+H});
+    const put=(pg,ox,oy,s)=>{let ax=ox,ay=oy;if(rot===90)ay=oy+s*W;else if(rot===180){ax=ox+s*W;ay=oy+s*H;}else if(rot===270)ax=ox+s*H;
+      pg.drawPage(e,{x:ax,y:ay,xScale:s,yScale:s,rotate:degrees(-rot)});};
+    const srcName=paperName(VW/MM,VH/MM);
+    if(o.mode==='fit'){
+      const p=planFit(VW,VH,o),pg=out.addPage([p.PW,p.PH]);put(pg,p.x,p.y,p.f);
+      if(p.strip){
+        const base=p.full?4*MM:p.m,sy=base+1.5*MM,pad=p.full?4*MM:0,wb=rgb(1,1,1);let bx=base+pad;
+        if(o.bar&&p.den){
+          const mPerPt=p.den/1000/MM,target=55*MM*mPerPt,nice=[.5,1,2,5,10,20,50,100,200,500,1000,2000].reverse().find(v=>v<=target)||.5;
+          const len=nice/mPerPt,seg=5,hh=1.6*MM;
+          if(p.full)pg.drawRectangle({x:bx-1.5*MM,y:sy-1.5*MM,width:len+9*MM,height:7.5*MM,color:wb});
+          for(let i=0;i<seg;i++)pg.drawRectangle({x:bx+i*len/seg,y:sy,width:len/seg,height:hh,color:i%2?rgb(1,1,1):rgb(0,0,0),borderColor:rgb(0,0,0),borderWidth:.4});
+          const lab=v=>(Math.round(v*100)/100).toString(),fs=2.2*MM;
+          for(const[t,xx]of[[0,0],[nice/2,len/2],[nice,len]]){const s=lab(t),tw=font.widthOfTextAtSize(s,fs);pg.drawText(s,{x:bx+xx-tw/2,y:sy+hh+.8*MM,size:fs,font});}
+          pg.drawText('m',{x:bx+len+1.5*MM,y:sy,size:fs,font});
+          bx+=len+12*MM;
+        }
+        if(o.note){
+          let t='พิมพ์ '+pct(p.f)+' จาก '+srcName+' ลง '+o.paper;
+          if(p.den)t+='   ·   มาตราส่วนในแบบ 1:'+o.orig+'  →  พิมพ์จริง 1:'+Math.round(p.den);
+          const im=await textPng(out,t,4.2),w=im.wMm*MM,h=im.hMm*MM;
+          const nx=Math.max(bx,p.PW-base-pad-w);
+          if(p.full)pg.drawRectangle({x:nx-1.5*MM,y:sy-1.5*MM,width:w+3*MM,height:h+1.8*MM,color:wb});
+          pg.drawImage(im.img,{x:nx,y:sy-.6*MM,width:w,height:h});
+        }
+      }
+      rows.push({src:srcName,dst:o.paper,f:p.f,den:p.den,snapped:p.snapped,sheets:1});
+    }else{
+      const t=planTile(VW,VH,o),L='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      for(let r=0;r<t.rows;r++)for(let c=0;c<t.cols;c++){
+        const pg=out.addPage([t.PW,t.PH]),rx=c*(t.aw-t.ov),ryTop=r*(t.ah-t.ov);
+        const ax=t.m-rx,ayTop=t.PH-t.m;put(pg,ax,ayTop-VH+ryTop,1);
+        const white=rgb(1,1,1);
+        pg.drawRectangle({x:0,y:0,width:t.PW,height:t.m+t.labelH,color:white});
+        pg.drawRectangle({x:0,y:t.PH-t.m,width:t.PW,height:t.m,color:white});
+        pg.drawRectangle({x:0,y:0,width:t.m,height:t.PH,color:white});
+        pg.drawRectangle({x:t.PW-t.m,y:0,width:t.m,height:t.PH,color:white});
+        const x0=t.m,y0=t.m+t.labelH,x1=t.PW-t.m,y1=t.PH-t.m,k=3*MM,blk=rgb(0,0,0);
+        for(const[px,py,dx,dy]of[[x0,y0,-1,-1],[x1,y0,1,-1],[x0,y1,-1,1],[x1,y1,1,1]]){
+          pg.drawLine({start:{x:px,y:py},end:{x:px+dx*k,y:py},thickness:.5,color:blk});
+          pg.drawLine({start:{x:px,y:py},end:{x:px,y:py+dy*k},thickness:.5,color:blk});}
+        const dash={thickness:.5,color:rgb(.45,.45,.45),dashArray:[3,3]};
+        if(c>0)pg.drawLine({start:{x:x0+t.ov,y:y0},end:{x:x0+t.ov,y:y1},...dash});
+        if(r>0)pg.drawLine({start:{x:x0,y:y1-t.ov},end:{x:x1,y:y1-t.ov},...dash});
+        const id=L[r%26]+(c+1),n=r*t.cols+c+1,fs=3.2*MM;
+        pg.drawText(id,{x:x0,y:t.m+1.5*MM,size:fs*1.4,font:bold});
+        pg.drawText(n+' / '+t.n+'   1:1   '+srcName+' -> '+t.cols+' x '+t.rows+' '+o.paper,{x:x0+16*MM,y:t.m+1.8*MM,size:fs*.8,font});
+        const gs=2.6*MM,gx=x1-t.cols*gs,gy=t.m+.8*MM;
+        for(let rr=0;rr<t.rows;rr++)for(let cc=0;cc<t.cols;cc++)
+          pg.drawRectangle({x:gx+cc*gs,y:gy+(t.rows-1-rr)*gs*.7,width:gs,height:gs*.7,borderColor:blk,borderWidth:.4,color:rr===r&&cc===c?rgb(.1,.1,.1):white});
+      }
+      rows.push({src:srcName,dst:t.cols+' × '+t.rows+' แผ่น '+o.paper,f:1,den:o.orig||null,sheets:t.n});
+    }
+  }
+  return{bytes:onlyFirst?await out.save():await out.save(),rows};
+}
+
+/* ---------- files & preview ---------- */
+async function addFiles(list){
+  const arr=[...list].filter(f=>f.type==='application/pdf'||/\.pdf$/i.test(f.name));
+  if(!arr.length){setStatus('รองรับเฉพาะไฟล์ PDF',true);return;}
+  for(const f of arr)await addBytes(f.name,new Uint8Array(await f.arrayBuffer()));
+}
+async function addBytes(name,bytes){
+  if(!window.PDFLib){setStatus('โหลดไลบรารีไม่สำเร็จ ตรวจการเชื่อมต่ออินเทอร์เน็ตแล้วรีเฟรชหน้า',true);return;}
+  try{const d=await PDFLib.PDFDocument.load(bytes,{ignoreEncryption:true});files.push({id:uid++,name,bytes,pages:d.getPageCount()});}
+  catch(e){console.error(e);setStatus('เปิด '+name+' ไม่ได้ ไฟล์อาจเสียหาย',true);return;}
+  setStatus('');renderFiles();
+}
+function renderFiles(){
+  $('#files').innerHTML=files.map(f=>'<li data-id="'+f.id+'"><span title="'+esc(f.name)+'">'+esc(f.name)+'</span><small>'+f.pages+' หน้า</small><button aria-label="นำออก">✕</button></li>').join('');
+  $('#files').querySelectorAll('button').forEach(b=>b.onclick=()=>{const id=+b.closest('li').dataset.id;files=files.filter(f=>f.id!==id);renderFiles();});
+  const sel=$('#pvFile'),keep=sel.value;sel.innerHTML=files.map(f=>'<option value="'+f.id+'">'+esc(f.name)+'</option>').join('');
+  if(files.some(f=>String(f.id)===keep))sel.value=keep;
+  $('#go').disabled=!files.length;$('#empty').classList.toggle('hidden',files.length>0);$('#pvc').classList.toggle('hidden',!files.length);
+  $('#tbl').classList.toggle('hidden',!files.length);
+  refresh();
+}
+let tok=0,tm=0;
+function refresh(){clearTimeout(tm);tm=setTimeout(preview,150);}
+async function preview(){
+  const f=files.find(x=>String(x.id)===$('#pvFile').value);if(!f||!PDFJS)return;
+  const my=++tok,o=opt();
+  try{
+    const all=await build(f,o,0);if(my!==tok)return;
+    renderTable(all.rows);
+    const doc=await PDFJS.getDocument({data:all.bytes}).promise,n=doc.numPages,sel=$('#pvPage'),keep=+sel.value||1;
+    sel.innerHTML='';for(let i=1;i<=n;i++){const op=document.createElement('option');op.value=op.textContent=i;sel.appendChild(op);}
+    sel.value=Math.min(keep,n);
+    await renderPage(doc,+sel.value,my);
+    sel.onchange=()=>renderPage(doc,+sel.value,tok);
+    $('#pvNote').textContent=n+' หน้าในไฟล์ผลลัพธ์';
+  }catch(e){console.error(e);setStatus('สร้างตัวอย่างไม่สำเร็จ',true);}
+}
+async function renderPage(doc,n,my){
+  const page=await doc.getPage(n),v1=page.getViewport({scale:1}),box=$('#pv'),dpr=window.devicePixelRatio||1;
+  const sc=Math.min((box.clientWidth-40)/v1.width,(box.clientHeight-40)/v1.height),vp=page.getViewport({scale:Math.max(sc,.1)*dpr});
+  const c=document.createElement('canvas');c.width=Math.floor(vp.width);c.height=Math.floor(vp.height);
+  const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);
+  await page.render({canvasContext:x,viewport:vp}).promise;if(my!==tok)return;
+  const cv=$('#pvc');cv.width=c.width;cv.height=c.height;cv.style.width=c.width/dpr+'px';cv.style.height=c.height/dpr+'px';cv.getContext('2d').drawImage(c,0,0);
+}
+function renderTable(rows){
+  const o=opt(),tile=o.mode==='tile';
+  $('#tbl').innerHTML='<table><thead><tr><th>แผ่น</th><th>ต้นฉบับ</th><th>ผลลัพธ์</th><th>'+(tile?'จำนวนกระดาษ':'สัดส่วน')+'</th><th>มาตราส่วนที่พิมพ์ได้</th></tr></thead><tbody>'
+    +rows.map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(r.src)+'</td><td>'+esc(r.dst)+'</td><td>'+(tile?r.sheets+' แผ่น':pct(r.f))+'</td><td class="big">'
+      +(r.den?'1:'+(Math.round(r.den*10)/10).toLocaleString('th-TH')+(r.snapped?' (ปัดแล้ว)':''):'–')+'</td></tr>').join('')+'</tbody></table>';
+}
+$('#pvFile').onchange=refresh;
+document.querySelector('aside').addEventListener('change',e=>{if(!e.target.matches('#file'))refresh();});
+document.querySelector('aside').addEventListener('input',e=>{if(e.target.matches('input[type=number]'))refresh();});
+document.querySelectorAll('input[name=mode]').forEach(r=>r.addEventListener('change',()=>{const t=opt().mode==='tile';$('#fitOpts').classList.toggle('hidden',t);$('#tileOpts').classList.toggle('hidden',!t);}));
+$('#file').addEventListener('change',e=>{addFiles(e.target.files);e.target.value='';});
+const drop=$('#drop');
+drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('drag');});
+drop.addEventListener('dragleave',()=>drop.classList.remove('drag'));
+drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('drag');addFiles(e.dataTransfer.files);});
+window.addEventListener('resize',()=>{clearTimeout(tm);tm=setTimeout(preview,250);});
+if(document.fonts)document.fonts.ready.then(refresh);
+
+/* ---------- save ---------- */
+async function saveFile(fn,data){
+  try{await TS.save(fn,data);setStatus('บันทึกแล้ว');}catch(e){console.error(e);setStatus('บันทึกไฟล์ไม่สำเร็จ',true);}
+}
+$('#go').onclick=async()=>{
+  const btn=$('#go');btn.disabled=true;const o=opt(),tag=o.mode==='tile'?' (แบ่งพิมพ์ '+o.paper+')':' ('+o.paper+')';
+  try{
+    try{await document.fonts.load('500 40px "IBM Plex Sans Thai"');}catch(e){}
+    const outs=[];
+    for(let i=0;i<files.length;i++){setStatus('กำลังสร้าง '+(i+1)+'/'+files.length+'…');const r=await build(files[i],o,0);outs.push({name:files[i].name.replace(/\.pdf$/i,'')+tag+'.pdf',bytes:r.bytes});}
+    if(outs.length===1)await saveFile(outs[0].name,new Blob([outs[0].bytes],{type:'application/pdf'}));
+    else{setStatus('กำลังรวมเป็นไฟล์ ZIP…');const z=new JSZip(),used=new Set();
+      outs.forEach(x=>{let n=x.name,k=2;while(used.has(n))n=x.name.replace(/\.pdf$/,' '+(k++)+'.pdf');used.add(n);z.file(n,x.bytes);});
+      await saveFile('แบบสำหรับพิมพ์ '+new Date().toISOString().slice(0,10)+'.zip',await z.generateAsync({type:'blob'}));}
+  }catch(e){console.error(e);setStatus('สร้างไฟล์ไม่สำเร็จ ไฟล์อาจเข้ารหัสหรือเสียหาย',true);}
+  btn.disabled=!files.length;
+};
+
+/* ---------- demo ---------- */
+$('#demo').onclick=async()=>{
+  if(!window.PDFLib){setStatus('โหลดไลบรารีไม่สำเร็จ ตรวจการเชื่อมต่ออินเทอร์เน็ต',true);return;}
+  const{PDFDocument,StandardFonts,rgb}=PDFLib,d=await PDFDocument.create(),f=await d.embedFont(StandardFonts.HelveticaBold);
+  const W=841*MM,H=594*MM,p=d.addPage([W,H]),u=10*MM; // 1 m at 1:100
+  p.drawRectangle({x:20,y:20,width:W-40,height:H-40,borderWidth:2,borderColor:rgb(0,0,0)});
+  p.drawRectangle({x:W-420,y:20,width:400,height:150,borderWidth:1.2,borderColor:rgb(0,0,0)});
+  p.drawText('A-101  PLAN  1:100',{x:W-400,y:60,size:30,font:f});
+  const ox=200,oy=300;p.drawRectangle({x:ox,y:oy,width:40*u,height:25*u,borderWidth:3,borderColor:rgb(0,0,0)});
+  for(let i=1;i<8;i++)p.drawLine({start:{x:ox+i*5*u,y:oy},end:{x:ox+i*5*u,y:oy+25*u},thickness:1.5,color:rgb(0,0,0)});
+  p.drawLine({start:{x:ox,y:oy-60},end:{x:ox+40*u,y:oy-60},thickness:1,color:rgb(0,0,0)});
+  p.drawText('40.00',{x:ox+20*u-30,y:oy-52,size:22,font:f});
+  await addBytes('ตัวอย่าง A1 1-100.pdf',await d.save());
+};
+render0();function render0(){$('#tbl').classList.add('hidden');}
+})();
+</script>
+</body>
+</html>

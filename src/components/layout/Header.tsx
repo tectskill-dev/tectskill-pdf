@@ -152,6 +152,7 @@ export const Header: React.FC<HeaderProps> = ({ locale, showSearch = true }) => 
       'organize-manage': '📁',
       'optimize-repair': '🔧',
       'secure-pdf': '🔒',
+      architect: '📐',
     };
     return icons[category] || '📄';
   };

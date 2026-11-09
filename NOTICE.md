@@ -17,3 +17,16 @@ Bundled fonts: **Sarabun** © The Sarabun Project Authors
 
 Under AGPL-3.0 §13, if you run this software as a network service, you must
 offer its complete corresponding source code to its users.
+
+## Architect tools (`public/arch-tools/`)
+
+The seven architect tools (revision compare, measure to scale, sheet set
+builder, stamp drawings, markup, compress drawings, print to scale) are by
+TectSkill. They bundle these third-party components locally:
+
+- PDF.js 3.11.174 — Apache License 2.0 (Mozilla)
+- pdf-lib 1.17.1 — MIT License
+- JSZip 3.10.1 — MIT License (dual MIT/GPLv3)
+- pako 2.1.0 — MIT License
+- jsPDF 2.5.1 — MIT License
+- IBM Plex Sans Thai — SIL Open Font License 1.1 (`public/arch-tools/fonts/IBMPlexSansThai-OFL.txt`)

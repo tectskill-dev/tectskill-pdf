@@ -7,7 +7,8 @@ export type ToolCategory =
   | 'convert-from-pdf'
   | 'organize-manage'
   | 'optimize-repair'
-  | 'secure-pdf';
+  | 'secure-pdf'
+  | 'architect';
 
 /**
  * All valid tool categories as an array for validation
@@ -19,6 +20,7 @@ export const TOOL_CATEGORIES: ToolCategory[] = [
   'organize-manage',
   'optimize-repair',
   'secure-pdf',
+  'architect',
 ];
 
 /**
@@ -70,6 +72,12 @@ export const CATEGORY_INFO: Record<ToolCategory, CategoryInfo> = {
     name: 'Secure PDF',
     description: 'Encrypt, decrypt, and secure PDF files',
     icon: 'shield',
+  },
+  architect: {
+    id: 'architect',
+    name: 'For Architects',
+    description: 'Tools made for architectural drawings: compare revisions, measure to scale, sheet sets and more',
+    icon: 'drafting-compass',
   },
 };
 

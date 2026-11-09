@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>บีบอัดแบบ – Compress Drawings | TectSkill</title>
+<meta name="description" content="ลดขนาดไฟล์แบบ PDF โดยไม่ทำให้เส้นแบบเบลอ ลดเฉพาะภาพ render และข้อมูลส่วนเกิน ฟรี">
+<link href="fonts/fonts.css" rel="stylesheet">
+<style>
+:root{
+  --bg:#E9ECEB; --panel:#F7F8F7; --ink:#1C2427; --muted:#5B676C; --line:#C9D0CF;
+  --accent:#1670C2; --ok:#1E7A46; --warn:#D02438; --btn:#1C2427; --btn-ink:#F7F8F7; --row:#fff; --grid:rgba(28,36,39,.06);
+  color-scheme:light; box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#141A1C; --panel:#1C2427; --ink:#E6EBEA; --muted:#98A4A8; --line:#2F3A3E; --accent:#4FA3F0; --ok:#4CC38A; --warn:#FF5A6A;
+    --btn:#E6EBEA; --btn-ink:#141A1C; --row:#1C2427; --grid:rgba(230,235,234,.05); color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141A1C; --panel:#1C2427; --ink:#E6EBEA; --muted:#98A4A8; --line:#2F3A3E; --accent:#4FA3F0; --ok:#4CC38A; --warn:#FF5A6A;
+  --btn:#E6EBEA; --btn-ink:#141A1C; --row:#1C2427; --grid:rgba(230,235,234,.05); color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.6 "IBM Plex Sans Thai",system-ui,-apple-system,"Segoe UI",sans-serif}
+.app{display:grid;grid-template-columns:340px 1fr;height:100%}
+aside{background:var(--panel);border-right:1px solid var(--line);overflow-y:auto;padding:20px 18px 28px}
+h1{font-size:22px;line-height:1.25;font-weight:600;margin:0 0 4px}
+.lede{color:var(--muted);font-size:13.5px;margin:0 0 16px}
+h2{font-size:14px;font-weight:600;margin:20px 0 8px}
+.drop{border:1.5px dashed var(--line);border-radius:10px;padding:14px 12px;text-align:center;font-size:13.5px;color:var(--muted)}
+.drop.drag{border-color:var(--ink);background:var(--grid)}
+.file-btn{display:inline-block;cursor:pointer;font-size:13.5px;padding:6px 14px;border-radius:7px;border:1px solid var(--line);color:var(--ink);margin-top:6px}
+.file-btn:hover{border-color:var(--ink)}
+.file-btn input{position:absolute;width:1px;height:1px;opacity:0}
+.file-btn:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.preset{display:grid;gap:6px}
+.preset label{display:grid;grid-template-columns:18px 1fr;gap:4px 8px;align-items:start;border:1px solid var(--line);border-radius:9px;padding:8px 10px;cursor:pointer;font-size:13.5px}
+.preset label:has(input:checked){border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.preset input{accent-color:var(--ink);margin-top:4px}
+.preset small{grid-column:2;color:var(--muted);font-size:12.5px;line-height:1.4}
+.check{display:flex;align-items:flex-start;gap:9px;font-size:13.5px;margin:8px 0;cursor:pointer}
+.check input{accent-color:var(--ink);width:16px;height:16px;margin-top:3px;flex:none}
+.check small{display:block;color:var(--muted);font-size:12.5px;line-height:1.4}
+.btn{font:inherit;font-weight:500;font-size:14px;border:0;border-radius:8px;padding:9px 14px;background:var(--btn);color:var(--btn-ink);cursor:pointer}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn.wide{width:100%;margin-top:14px}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#status{font-size:13px;color:var(--muted);min-height:1.6em;margin-top:8px}
+#status.err{color:var(--warn)}
+.hint{font-size:12.5px;color:var(--muted);margin:8px 0 0}
+main{overflow-y:auto;padding:20px 24px 40px}
+.sum{display:flex;gap:28px;flex-wrap:wrap;margin:4px 0 20px}
+.sum div{font-size:13px;color:var(--muted)}
+.sum b{display:block;font-size:26px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1.3}
+.sum .good b{color:var(--ok)}
+.card{background:var(--row);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:8px}
+.card .top{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.card .nm{font-weight:500;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card .x{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:15px}
+.card .x:hover{color:var(--warn)}
+.card .sz{font-size:13.5px;font-variant-numeric:tabular-nums;color:var(--muted)}
+.card .sz b{color:var(--ink);font-weight:600}
+.card .pct{font-weight:600;color:var(--ok);font-size:13.5px}
+.card .pct.none{color:var(--muted);font-weight:400}
+.bar{height:6px;background:var(--grid);border-radius:3px;margin:8px 0 6px;overflow:hidden}
+.bar span{display:block;height:100%;background:var(--ok);border-radius:3px;transition:width .4s}
+.card .det{font-size:12.5px;color:var(--muted)}
+.empty{display:grid;place-items:center;text-align:center;height:100%}
+.empty div{max-width:400px;color:var(--muted);font-size:14px}
+.empty strong{display:block;color:var(--ink);font-size:17px;font-weight:600;margin-bottom:6px}
+.empty .btn{margin-top:14px}
+.hidden{display:none!important}
+@media (max-width:820px){
+  .app{grid-template-columns:1fr;height:auto}
+  aside{border-right:0;border-bottom:1px solid var(--line)}
+  main{min-height:60vh}
+}
+@media (prefers-reduced-motion:reduce){.bar span{transition:none}}
+</style>
+<script src="brand.js" data-tool="compress"></script>
+</head>
+<body>
+<div class="app">
+<aside>
+  <h1>บีบอัดแบบ</h1>
+  <p class="lede">ลดขนาด PDF ชุดแบบโดยไม่แตะเส้นเวกเตอร์ เส้นแบบยังคมเท่าเดิม ลดเฉพาะภาพ render ภาพถ่าย และข้อมูลส่วนเกิน ไฟล์ประมวลผลในเครื่องคุณเท่านั้น</p>
+  <div class="drop" id="drop">ลากไฟล์ PDF มาวาง หรือ<br>
+    <label class="file-btn">เลือกไฟล์ PDF<input type="file" accept="application/pdf,.pdf" id="file" multiple></label>
+  </div>
+  <div id="status" role="status" aria-live="polite"></div>
+
+  <h2>ระดับการบีบอัดภาพ</h2>
+  <div class="preset" role="radiogroup" aria-label="ระดับการบีบอัด">
+    <label><input type="radio" name="lv" value="300,0.88"><span>พิมพ์คุณภาพสูง</span><small>ภาพไม่เกิน 300 dpi เหมาะกับส่งโรงพิมพ์</small></label>
+    <label><input type="radio" name="lv" value="200,0.82" checked><span>สมดุล</span><small>ภาพไม่เกิน 200 dpi พิมพ์สำนักงานยังสวย</small></label>
+    <label><input type="radio" name="lv" value="150,0.75"><span>ส่งอีเมล</span><small>ภาพไม่เกิน 150 dpi ไฟล์เล็กลงชัดเจน</small></label>
+    <label><input type="radio" name="lv" value="100,0.68"><span>ส่ง LINE / ดูบนจอ</span><small>ภาพไม่เกิน 100 dpi เล็กที่สุด</small></label>
+  </div>
+
+  <h2>ตัวเลือก</h2>
+  <label class="check"><input type="checkbox" id="optPng" checked><span>แปลงภาพที่ไม่บีบอัดเป็น JPEG<small>ได้ผลมากกับภาพ render แต่ถ้าแบบมีภาพสแกนเส้น ให้ปิดตัวเลือกนี้</small></span></label>
+  <label class="check"><input type="checkbox" id="optGc" checked><span>ลบข้อมูลที่ไม่ได้ใช้<small>เศษจากการบันทึกทับหลายครั้ง ภาพตัวอย่างหน้า และ metadata</small></span></label>
+  <button class="btn wide" id="go" disabled>บีบอัดและบันทึก</button>
+  <p class="hint">ถ้าไฟล์ไม่เล็กลง ระบบจะใช้ไฟล์เดิม ไฟล์ต้นฉบับไม่ถูกแก้ไข</p>
+</aside>
+
+<main>
+  <div id="results" class="hidden">
+    <div class="sum" id="sum"></div>
+    <div id="cards"></div>
+  </div>
+  <div class="empty" id="empty"><div><strong>เพิ่มไฟล์แบบที่ต้องการลดขนาด</strong>เหมาะกับชุดแบบที่มีภาพ perspective, ภาพถ่ายหน้างาน หรือไฟล์ที่ถูกบันทึกทับหลายรอบ แบบที่เป็นเส้นล้วนอาจลดได้ไม่มาก<br><button class="btn ghost" id="demo">ลองกับไฟล์ตัวอย่าง</button></div></div>
+</main>
+</div>
+
+<script src="vendor/pdf-lib.min.js"></script>
+<script src="vendor/pako.min.js"></script>
+<script src="vendor/jszip.min.js"></script>
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const setStatus=(t,err)=>{const s=$('#status');s.textContent=t;s.classList.toggle('err',!!err);};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmtB=b=>b<1024*1024?(b/1024).toLocaleString('th-TH',{maximumFractionDigits:0})+' KB':(b/1048576).toLocaleString('th-TH',{maximumFractionDigits:1})+' MB';
+let files=[],uid=1;
+
+/* ---------- files ---------- */
+async function addFiles(list){
+  const arr=[...list].filter(f=>f.type==='application/pdf'||/\.pdf$/i.test(f.name));
+  if(!arr.length){setStatus('รองรับเฉพาะไฟล์ PDF',true);return;}
+  for(const f of arr)files.push({id:uid++,name:f.name,bytes:new Uint8Array(await f.arrayBuffer()),out:null,info:null});
+  setStatus('');render();
+}
+function render(){
+  $('#empty').classList.toggle('hidden',files.length>0);$('#results').classList.toggle('hidden',!files.length);
+  $('#go').disabled=!files.length;
+  const before=files.reduce((a,f)=>a+f.bytes.length,0),done=files.filter(f=>f.out),after=done.reduce((a,f)=>a+f.out.length,0)+files.filter(f=>!f.out).reduce((a,f)=>a+f.bytes.length,0);
+  const pct=before?Math.round((1-after/before)*100):0;
+  $('#sum').innerHTML='<div>ขนาดเดิม<b>'+fmtB(before)+'</b></div>'+(done.length?'<div>หลังบีบอัด<b>'+fmtB(after)+'</b></div><div class="good">ลดลง<b>'+Math.max(0,pct)+'%</b></div>':'<div>'+files.length+' ไฟล์<b>รอบีบอัด</b></div>');
+  $('#cards').innerHTML=files.map(f=>{
+    const o=f.out,p=o?Math.round((1-o.length/f.bytes.length)*100):0;
+    return '<div class="card" data-id="'+f.id+'"><div class="top"><span class="nm" title="'+esc(f.name)+'">'+esc(f.name)+'</span>'
+      +'<span class="sz">'+fmtB(f.bytes.length)+(o?' → <b>'+fmtB(o.length)+'</b>':'')+'</span>'
+      +(o?'<span class="pct'+(p>0?'':' none')+'">'+(p>0?'−'+p+'%':'ไม่เล็กลง')+'</span>':'')+'<button class="x" aria-label="นำออก">✕</button></div>'
+      +'<div class="bar"><span style="width:'+(o?Math.max(2,100-Math.max(0,p)):100)+'%"></span></div>'
+      +'<div class="det">'+(f.info?esc(f.info):'ยังไม่บีบอัด')+'</div></div>';
+  }).join('');
+  $('#cards').querySelectorAll('.x').forEach(b=>b.onclick=()=>{const id=+b.closest('.card').dataset.id;files=files.filter(f=>f.id!==id);render();});
+}
+$('#file').addEventListener('change',e=>{addFiles(e.target.files);e.target.value='';});
+const drop=$('#drop');
+drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('drag');});
+drop.addEventListener('dragleave',()=>drop.classList.remove('drag'));
+drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('drag');addFiles(e.dataTransfer.files);});
+document.querySelectorAll('input[name=lv],#optPng,#optGc').forEach(el=>el.addEventListener('change',()=>{files.forEach(f=>{f.out=null;f.info=null;});render();}));
+
+/* ---------- helpers ---------- */
+const L=()=>window.PDFLib;
+const N=n=>L().PDFName.of(n);
+function num(d,k){const v=d.lookup(N(k));return v&&v.asNumber?v.asNumber():null;}
+function colorInfo(ctx,cs){
+  const{PDFName,PDFArray}=L();
+  if(cs instanceof PDFName){if(cs===N('DeviceRGB'))return 3;if(cs===N('DeviceGray'))return 1;return 0;}
+  if(cs instanceof PDFArray&&cs.size()>=2&&cs.lookup(0)===N('ICCBased')){const s=cs.lookup(1);const n=s&&s.dict?num(s.dict,'N'):0;return n===3||n===1?n:0;}
+  return 0;
+}
+function unpredict(data,w,colors,pred){
+  if(!pred||pred===1)return data;if(pred<10)return null;
+  const bpp=colors,row=w*colors,rows=Math.floor(data.length/(row+1)),out=new Uint8Array(row*rows);let prev=new Uint8Array(row);
+  for(let r=0;r<rows;r++){
+    const ft=data[r*(row+1)],o=r*(row+1)+1,cur=out.subarray(r*row,(r+1)*row);
+    for(let i=0;i<row;i++){
+      const raw=data[o+i],left=i>=bpp?cur[i-bpp]:0,up=prev[i],ul=i>=bpp?prev[i-bpp]:0;let v;
+      switch(ft){case 0:v=raw;break;case 1:v=raw+left;break;case 2:v=raw+up;break;case 3:v=raw+((left+up)>>1);break;
+        case 4:{const p=left+up-ul,pa=Math.abs(p-left),pb=Math.abs(p-up),pc=Math.abs(p-ul);v=raw+(pa<=pb&&pa<=pc?left:pb<=pc?up:ul);break;}
+        default:return null;}
+      cur[i]=v&255;
+    }
+    prev=cur;
+  }
+  return out;
+}
+function canvasFrom(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;return c;}
+const toJpeg=(c,q)=>new Promise((res,rej)=>c.toBlob(b=>b?b.arrayBuffer().then(a=>res(new Uint8Array(a))):rej(new Error('encode')),'image/jpeg',q));
+
+/* ---------- core ---------- */
+async function compress(bytes,dpi,q,optPng,optGc){
+  const{PDFDocument,PDFRawStream,PDFDict,PDFArray,PDFRef}=L();
+  const doc=await PDFDocument.load(bytes,{ignoreEncryption:true,updateMetadata:false}),ctx=doc.context;
+  doc.setProducer(TS.producer);
+  let maxIn=0;for(const p of doc.getPages()){const{width,height}=p.getSize();maxIn=Math.max(maxIn,width/72,height/72);}
+  const maxPx=Math.round(maxIn*dpi);
+  const st={img:0,imgSaved:0,deflated:0,removed:0};
+  for(const[ref,obj]of ctx.enumerateIndirectObjects()){
+    if(!(obj instanceof PDFRawStream))continue;
+    const d=obj.dict,filter=d.lookup(N('Filter')),f=filter instanceof PDFArray?(filter.size()===1?filter.lookup(0):'multi'):filter;
+    if(d.lookup(N('Subtype'))===N('Image')){
+      try{
+        if(d.lookup(N('ImageMask'))||d.lookup(N('Mask'))instanceof PDFArray)continue;
+        const w=num(d,'Width'),h=num(d,'Height'),bpc=num(d,'BitsPerComponent'),n=colorInfo(ctx,d.lookup(N('ColorSpace')));
+        if(!w||!h||w*h<160000||!n||(bpc&&bpc!==8)||d.lookup(N('Decode')))continue;
+        const sc=Math.min(1,maxPx/Math.max(w,h)),nw=Math.max(1,Math.round(w*sc)),nh=Math.max(1,Math.round(h*sc));
+        let c=null;
+        if(f===N('DCTDecode')){
+          const bmp=await createImageBitmap(new Blob([obj.contents],{type:'image/jpeg'}));
+          c=canvasFrom(nw,nh);const x=c.getContext('2d');x.imageSmoothingQuality='high';x.drawImage(bmp,0,0,nw,nh);bmp.close&&bmp.close();
+        }else if(optPng&&(f===N('FlateDecode')||f===undefined)){
+          let raw=f===undefined?obj.contents:window.pako.inflate(obj.contents);
+          const dp=d.lookup(N('DecodeParms')),pred=dp instanceof PDFDict?num(dp,'Predictor'):null;
+          if(pred){const cols=num(dp,'Columns')||w,colors=num(dp,'Colors')||n;if(cols!==w||colors!==n)continue;raw=unpredict(raw,w,n,pred);if(!raw)continue;}
+          if(raw.length<w*h*n)continue;
+          const src=canvasFrom(w,h),sx=src.getContext('2d'),id=sx.createImageData(w,h),px=id.data;
+          for(let i=0,j=0,k=0;i<w*h;i++,j+=4,k+=n){if(n===3){px[j]=raw[k];px[j+1]=raw[k+1];px[j+2]=raw[k+2];}else{px[j]=px[j+1]=px[j+2]=raw[k];}px[j+3]=255;}
+          sx.putImageData(id,0,0);
+          if(sc<1){c=canvasFrom(nw,nh);const x=c.getContext('2d');x.imageSmoothingQuality='high';x.drawImage(src,0,0,nw,nh);}else c=src;
+        }else continue;
+        const jpg=await toJpeg(c,q);
+        if(jpg.length<obj.contents.length*.9){
+          const nd={Type:'XObject',Subtype:'Image',Width:nw,Height:nh,ColorSpace:'DeviceRGB',BitsPerComponent:8,Filter:'DCTDecode'};
+          for(const k of['SMask','Interpolate','Intent','OC','Metadata']){const v=d.get(N(k));if(v!==undefined)nd[k]=v;}
+          ctx.assign(ref,ctx.stream(jpg,nd));st.img++;st.imgSaved+=obj.contents.length-jpg.length;
+        }
+      }catch(e){console.warn('skip image',e);}
+      continue;
+    }
+    if(filter===undefined&&obj.contents.length>512&&d.lookup(N('Type'))!==N('Metadata')){
+      d.set(N('Filter'),N('FlateDecode'));ctx.assign(ref,PDFRawStream.of(d,window.pako.deflate(obj.contents,{level:9})));st.deflated++;
+    }
+  }
+  if(optGc){
+    doc.catalog.delete(N('Metadata'));
+    for(const p of doc.getPages())p.node.delete(N('Thumb'));
+    st.removed=collect(ctx);
+  }
+  const out=await doc.save({useObjectStreams:true,addDefaultPage:false});
+  return{out,st};
+}
+function collect(ctx){
+  const{PDFRef,PDFDict,PDFArray}=L(),seen=new Set(),stack=[],t=ctx.trailerInfo;
+  for(const v of[t.Root,t.Info,t.Encrypt])if(v)stack.push(v);
+  while(stack.length){
+    const o=stack.pop();
+    if(o instanceof PDFRef){if(seen.has(o.tag))continue;seen.add(o.tag);const v=ctx.lookup(o);if(v)stack.push(v);}
+    else if(o instanceof PDFDict){for(const[,v]of o.entries())stack.push(v);}
+    else if(o instanceof PDFArray){for(const v of o.asArray())stack.push(v);}
+    else if(o&&o.dict instanceof PDFDict)stack.push(o.dict);
+  }
+  let n=0;for(const[ref]of ctx.enumerateIndirectObjects())if(!seen.has(ref.tag)){ctx.delete(ref);n++;}
+  return n;
+}
+
+/* ---------- run ---------- */
+async function saveFile(fn,data){
+  try{await TS.save(fn,data);setStatus('บันทึกแล้ว');}catch(e){console.error(e);setStatus('บันทึกไฟล์ไม่สำเร็จ',true);}
+}
+$('#go').onclick=async()=>{
+  if(!window.PDFLib||!window.pako){setStatus('โหลดไลบรารีไม่สำเร็จ ตรวจการเชื่อมต่ออินเทอร์เน็ตแล้วรีเฟรชหน้า',true);return;}
+  const[dpi,q]=document.querySelector('input[name=lv]:checked').value.split(',').map(Number),png=$('#optPng').checked,gc=$('#optGc').checked;
+  const btn=$('#go');btn.disabled=true;
+  for(let i=0;i<files.length;i++){
+    const f=files[i];if(f.out)continue;
+    setStatus('กำลังบีบอัด '+(i+1)+'/'+files.length+' – '+f.name+'…');await new Promise(r=>setTimeout(r,20));
+    try{
+      const r=await compress(f.bytes,dpi,q,png,gc),parts=[];
+      if(r.st.img)parts.push('บีบอัดภาพ '+r.st.img+' ภาพ (ลด '+fmtB(r.st.imgSaved)+')');
+      if(r.st.deflated)parts.push('บีบอัดข้อมูลเส้น '+r.st.deflated+' ส่วน');
+      if(r.st.removed)parts.push('ลบข้อมูลไม่ได้ใช้ '+r.st.removed+' รายการ');
+      if(r.out.length<f.bytes.length){f.out=r.out;f.info=parts.join(' · ')||'จัดโครงสร้างไฟล์ใหม่';}
+      else{f.out=f.bytes;f.info='ไฟล์นี้กระชับอยู่แล้ว ใช้ไฟล์เดิม';}
+    }catch(e){console.error(e);f.out=f.bytes;f.info='บีบอัดไม่ได้ (ไฟล์อาจเข้ารหัส) ใช้ไฟล์เดิม';}
+    render();
+  }
+  try{
+    const outs=files.map(f=>({name:f.name.replace(/\.pdf$/i,'')+' (บีบอัด).pdf',bytes:f.out}));
+    if(outs.length===1)await saveFile(outs[0].name,new Blob([outs[0].bytes],{type:'application/pdf'}));
+    else{
+      setStatus('กำลังรวมเป็นไฟล์ ZIP…');const z=new JSZip(),used=new Set();
+      outs.forEach(o=>{let n=o.name,k=2;while(used.has(n))n=o.name.replace(/\.pdf$/,' '+(k++)+'.pdf');used.add(n);z.file(n,o.bytes,{compression:'STORE'});});
+      await saveFile('แบบบีบอัด '+new Date().toISOString().slice(0,10)+'.zip',await z.generateAsync({type:'blob'}));
+    }
+  }catch(e){console.error(e);setStatus('บันทึกไม่สำเร็จ',true);}
+  btn.disabled=!files.length;
+};
+
+/* ---------- demo ---------- */
+$('#demo').onclick=async()=>{
+  if(!window.PDFLib){setStatus('โหลดไลบรารีไม่สำเร็จ ตรวจการเชื่อมต่ออินเทอร์เน็ต',true);return;}
+  setStatus('กำลังสร้างไฟล์ตัวอย่าง…');
+  const{PDFDocument,rgb}=PDFLib,d=await PDFDocument.create();
+  for(let k=0;k<2;k++){
+    const c=canvasFrom(3600,2400),x=c.getContext('2d'),g=x.createLinearGradient(0,0,3600,2400);
+    g.addColorStop(0,k?'#8fb6d8':'#d9c7a5');g.addColorStop(.6,'#f2efe8');g.addColorStop(1,k?'#41607a':'#6d7f5a');
+    x.fillStyle=g;x.fillRect(0,0,3600,2400);
+    for(let i=0;i<500;i++){x.fillStyle='hsla('+(20+Math.random()*180)+',30%,'+(30+Math.random()*50)+'%,.35)';x.fillRect(Math.random()*3600,Math.random()*2400,40+Math.random()*400,40+Math.random()*300);}
+    const img=await d.embedJpg(await toJpeg(c,.97)),p=d.addPage([1190.55,841.89]);
+    p.drawRectangle({x:20,y:20,width:1150.55,height:801.89,borderWidth:1.5,borderColor:rgb(0,0,0)});
+    p.drawImage(img,{x:60,y:240,width:780,height:520});
+    for(let i=0;i<40;i++)p.drawLine({start:{x:880,y:240+i*13},end:{x:1130,y:240+i*13},thickness:.6,color:rgb(0,0,0)});
+  }
+  files.push({id:uid++,name:'ตัวอย่างภาพ render.pdf',bytes:await d.save(),out:null,info:null});setStatus('');render();
+};
+render();
+})();
+</script>
+</body>
+</html>

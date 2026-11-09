@@ -20,6 +20,7 @@ import {
   Zap,
   ChevronsUpDown,
   Trash2,
+  DraftingCompass,
 } from 'lucide-react';
 import {
   STUDIO_TOOLS,
@@ -78,6 +79,13 @@ const CATEGORY_META: Record<
     icon: Wrench,
     accentColor: 'text-purple-500 dark:text-purple-400',
     iconBg: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
+  },
+  architect: {
+    labelZh: '建筑师工具',
+    labelEn: 'For Architects',
+    icon: DraftingCompass,
+    accentColor: 'text-sky-500 dark:text-sky-400',
+    iconBg: 'bg-sky-500/10 text-sky-600 dark:text-sky-400',
   },
   'secure-pdf': {
     labelZh: '安全与隐私',

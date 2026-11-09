@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ตรวจแบบ – Markup | TectSkill</title>
+<meta name="description" content="ตรวจแบบ PDF ด้วยเมฆแก้ไข ลูกศร และข้อความ พร้อมรายการความเห็นและส่งออกตาราง ฟรี">
+<link href="fonts/fonts.css" rel="stylesheet">
+<style>
+:root{
+  --bg:#E9ECEB; --panel:#F7F8F7; --ink:#1C2427; --muted:#5B676C; --line:#C9D0CF;
+  --accent:#1670C2; --warn:#D02438; --btn:#1C2427; --btn-ink:#F7F8F7; --row:#fff; --grid:rgba(28,36,39,.06);
+  color-scheme:light; box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#141A1C; --panel:#1C2427; --ink:#E6EBEA; --muted:#98A4A8; --line:#2F3A3E; --accent:#4FA3F0; --warn:#FF5A6A;
+    --btn:#E6EBEA; --btn-ink:#141A1C; --row:#141A1C; --grid:rgba(230,235,234,.05); color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141A1C; --panel:#1C2427; --ink:#E6EBEA; --muted:#98A4A8; --line:#2F3A3E; --accent:#4FA3F0; --warn:#FF5A6A;
+  --btn:#E6EBEA; --btn-ink:#141A1C; --row:#141A1C; --grid:rgba(230,235,234,.05); color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.6 "IBM Plex Sans Thai",system-ui,-apple-system,"Segoe UI",sans-serif}
+.app{display:grid;grid-template-columns:340px 1fr;height:100%}
+aside{background:var(--panel);border-right:1px solid var(--line);overflow-y:auto;padding:20px 18px 28px}
+h1{font-size:22px;line-height:1.25;font-weight:600;margin:0 0 4px}
+.lede{color:var(--muted);font-size:13.5px;margin:0 0 16px}
+h2{font-size:14px;font-weight:600;margin:20px 0 8px;display:flex;align-items:center;gap:8px}
+h2 select{margin-left:auto;width:auto}
+label.blk{display:block;font-size:13px;color:var(--muted);margin:10px 0 3px}
+input[type=text],select,textarea{font:inherit;font-size:13.5px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:5px 8px;width:100%}
+textarea{resize:vertical;min-height:52px;line-height:1.45}
+.drop{border:1.5px dashed var(--line);border-radius:10px;padding:10px 12px}
+.drop.drag{border-color:var(--ink);background:var(--grid)}
+.name{font-size:13px;color:var(--muted);word-break:break-all;margin:0 0 6px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.file-btn{display:inline-block;cursor:pointer;font-size:13px;padding:5px 12px;border-radius:7px;border:1px solid var(--line);color:var(--ink)}
+.file-btn:hover{border-color:var(--ink)}
+.file-btn input{position:absolute;width:1px;height:1px;opacity:0}
+.file-btn:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.btn{font:inherit;font-weight:500;font-size:14px;border:0;border-radius:8px;padding:8px 14px;background:var(--btn);color:var(--btn-ink);cursor:pointer}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn.sm{font-size:13px;padding:5px 10px}
+button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#status{font-size:13px;color:var(--muted);min-height:1.6em;margin-top:6px}
+#status.err{color:var(--warn)}
+.hint{font-size:12.5px;color:var(--muted);margin:6px 0 0}
+.check{display:flex;align-items:center;gap:8px;font-size:13.5px;margin:6px 0;cursor:pointer}
+.check input{accent-color:var(--ink);width:16px;height:16px}
+#list{list-style:none;padding:0;margin:0}
+#list li{background:var(--row);border:1px solid var(--line);border-radius:9px;padding:8px 10px;margin-bottom:6px}
+#list li.sel{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
+#list li.done{opacity:.6}
+#list .hd{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);cursor:pointer}
+#list .num{width:22px;height:22px;border-radius:50%;color:#fff;font-weight:600;font-size:12px;display:grid;place-items:center;flex:none}
+#list .hd .sp{flex:1}
+#list .hd button{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:15px;border-radius:5px;padding:0 4px}
+#list .hd button:hover{color:var(--warn)}
+#list textarea{margin-top:6px}
+#list .ft{display:flex;align-items:center;gap:8px;margin-top:4px;font-size:12px;color:var(--muted)}
+#list .ft label{display:flex;align-items:center;gap:5px;cursor:pointer;color:var(--ink);font-size:12.5px}
+#list .ft input{accent-color:var(--ink)}
+#list .ft span{margin-left:auto}
+main{position:relative;display:flex;flex-direction:column;min-width:0;min-height:0}
+.toolbar{display:flex;gap:6px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);background:var(--panel);flex-wrap:wrap}
+.toolbar button{font:inherit;font-size:13px;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:7px;padding:4px 10px;cursor:pointer;min-width:34px}
+.toolbar button:hover{border-color:var(--ink)}
+.toolbar button[aria-pressed="true"]{background:var(--btn);color:var(--btn-ink);border-color:var(--btn)}
+.toolbar .sep{width:1px;height:22px;background:var(--line);margin:0 4px}
+.toolbar .sp{flex:1}
+.toolbar select{width:auto;padding:3px 6px;font-size:13px}
+.sw{display:flex;gap:5px}
+.sw label{width:22px;height:22px;border-radius:50%;cursor:pointer}
+.sw input{position:absolute;opacity:0;width:1px;height:1px}
+.sw label:has(input:checked){box-shadow:0 0 0 2px var(--panel),0 0 0 4px var(--ink)}
+.sw label:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:4px}
+#zoomv{font-size:13px;color:var(--muted);min-width:46px;text-align:center}
+#viewer{flex:1;overflow:auto;min-height:0;background-color:var(--bg);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:24px 24px}
+.stage{display:flex;min-width:100%;min-height:100%;padding:16px}
+.sheet{position:relative;margin:auto;background:#fff;box-shadow:0 0 0 1px var(--line);flex:none}
+.sheet.draw{cursor:crosshair;touch-action:none}
+.sheet.panning{cursor:grabbing}
+.sheet canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.sheet svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.sheet [data-id]{cursor:move;touch-action:none}
+.mk-text{font-family:"IBM Plex Sans Thai",sans-serif;font-weight:500}
+.empty{position:absolute;inset:52px 0 0 0;display:grid;place-items:center;pointer-events:none;padding:24px;text-align:center}
+.empty div{max-width:380px;color:var(--muted);font-size:14px}
+.empty strong{display:block;color:var(--ink);font-size:17px;font-weight:600;margin-bottom:6px}
+.empty .btn{pointer-events:auto;margin-top:14px}
+.hidden{display:none!important}
+@media (max-width:820px){
+  .app{grid-template-columns:1fr;height:auto}
+  aside{border-right:0;border-bottom:1px solid var(--line);order:2}
+  main{height:78vh;height:78svh;order:1}
+}
+</style>
+<script src="brand.js" data-tool="markup"></script>
+</head>
+<body>
+<div class="app">
+<aside>
+  <h1>ตรวจแบบ</h1>
+  <p class="lede">วาดเมฆแก้ไข ลูกศรชี้ และข้อความบนแบบ ทุกจุดมีเลขกำกับและรายการความเห็น ไฟล์ประมวลผลในเครื่องคุณเท่านั้น</p>
+  <div class="drop" id="drop">
+    <div class="name" id="fname">ยังไม่ได้เลือกไฟล์</div>
+    <div class="row">
+      <label class="file-btn">เลือก PDF<input type="file" accept="application/pdf,.pdf" id="file"></label>
+      <button class="btn ghost sm" id="demo">ลองกับแบบตัวอย่าง</button>
+    </div>
+  </div>
+  <div id="status" role="status" aria-live="polite"></div>
+  <label class="blk" for="author">ชื่อผู้ตรวจ</label>
+  <input type="text" id="author" placeholder="ชื่อที่จะบันทึกกับความเห็น">
+
+  <h2>ความเห็น <span id="cnt" style="font-weight:400;color:var(--muted)"></span>
+    <select id="filter" aria-label="ตัวกรอง"><option value="all">ทั้งหมด</option><option value="open">ยังไม่แก้</option><option value="page">หน้านี้</option></select></h2>
+  <p class="hint" id="emptyList" style="margin-top:0">ยังไม่มีความเห็น เลือกเครื่องมือด้านบนแบบแล้ววาดบนแบบ</p>
+  <ul id="list"></ul>
+
+  <h2>ส่งออก</h2>
+  <label class="check"><input type="checkbox" id="incDone" checked>รวมรายการที่แก้แล้ว</label>
+  <label class="check"><input type="checkbox" id="notes" checked>ใส่ sticky note ที่เปิดอ่านใน Acrobat ได้</label>
+  <div class="row" style="margin-top:8px">
+    <button class="btn" id="pdf" disabled>แบบพร้อม markup (PDF)</button>
+    <button class="btn ghost" id="csv" disabled>ตารางความเห็น (CSV)</button>
+  </div>
+  <p class="hint">ความเห็นบันทึกอัตโนมัติในเบราว์เซอร์นี้ เปิดไฟล์เดิมอีกครั้งจะกลับมาครบ</p>
+</aside>
+
+<main>
+  <div class="toolbar">
+    <button data-tool="select" aria-pressed="true" title="เลือกและย้าย (V)">เลือก</button>
+    <button data-tool="cloud" aria-pressed="false" title="ลากเพื่อวาดเมฆ (C)">เมฆแก้ไข</button>
+    <button data-tool="callout" aria-pressed="false" title="คลิกจุดชี้ แล้วคลิกตำแหน่งข้อความ (A)">ลูกศรชี้</button>
+    <button data-tool="text" aria-pressed="false" title="คลิกเพื่อวางข้อความ (T)">ข้อความ</button>
+    <div class="sw" role="radiogroup" aria-label="สี">
+      <label style="background:#D02438"><input type="radio" name="col" value="#D02438" checked aria-label="แดง"></label>
+      <label style="background:#1670C2"><input type="radio" name="col" value="#1670C2" aria-label="น้ำเงิน"></label>
+      <label style="background:#1E7A46"><input type="radio" name="col" value="#1E7A46" aria-label="เขียว"></label>
+      <label style="background:#E07A00"><input type="radio" name="col" value="#E07A00" aria-label="ส้ม"></label>
+    </div>
+    <span class="sep"></span>
+    <label class="row" style="gap:6px;font-size:13px">หน้า <select id="page" aria-label="หน้า"></select></label>
+    <span class="sp"></span>
+    <button id="zout" aria-label="ย่อ">−</button><span id="zoomv">–</span><button id="zin" aria-label="ขยาย">+</button>
+    <button id="zfit">พอดีจอ</button>
+  </div>
+  <div id="viewer"><div class="stage"><div class="sheet hidden" id="sheet"><canvas id="cv"></canvas><svg id="ov" xmlns="http://www.w3.org/2000/svg"></svg></div></div></div>
+  <div class="empty" id="empty"><div><strong>เปิดแบบ PDF เพื่อเริ่มตรวจ</strong>วาดเมฆรอบจุดที่ต้องแก้ เขียนความเห็นในรายการ แล้วส่งออกเป็นแบบพร้อม markup หรือตารางความเห็น<br><button class="btn ghost" id="demo2">ลองกับแบบตัวอย่าง</button></div></div>
+</main>
+</div>
+
+<script src="vendor/pdf.min.js"></script>
+<script src="vendor/pdf.worker.min.js"></script>
+<script src="vendor/pdf-lib.min.js"></script>
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const PDFJS=window.pdfjsLib||null;
+if(PDFJS)PDFJS.GlobalWorkerOptions.workerSrc='vendor/pdf.worker.min.js';
+const F='"IBM Plex Sans Thai",sans-serif',MAX_PX=14e6;
+const setStatus=(t,err)=>{const s=$('#status');s.textContent=t;s.classList.toggle('err',!!err);};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const KIND={cloud:'เมฆแก้ไข',callout:'ลูกศรชี้',text:'ข้อความ'};
+
+let doc=null,bytes=null,fileName='',pg=1,wPt=0,hPt=0,zoom=1,loadTok=0,numPages=0;
+let items=[],nextNo=1,sel=null,tool='select',draft=null,hover=null,storeKey=null,saveT=0;
+const viewer=$('#viewer'),sheet=$('#sheet'),cv=$('#cv'),ov=$('#ov');
+try{$('#author').value=localStorage.getItem('markup:author')||'';}catch(e){}
+$('#author').addEventListener('input',()=>{try{localStorage.setItem('markup:author',$('#author').value);}catch(e){}});
+const color=()=>document.querySelector('input[name=col]:checked').value;
+
+/* ---------- text layout ---------- */
+const mctx=document.createElement('canvas').getContext('2d');
+const SEG=typeof Intl!=='undefined'&&Intl.Segmenter?new Intl.Segmenter('th',{granularity:'word'}):null;
+function wrap(text,fs,maxW){
+  mctx.font='500 '+fs+'px '+F;const out=[];
+  for(const para of text.split('\n')){
+    const toks=SEG?[...SEG.segment(para)].map(s=>s.segment):para.match(/[\u0E00-\u0E7F]|\S+|\s+/g)||[''];
+    let line='';
+    for(const t of toks){
+      const test=line+t;
+      if(line&&mctx.measureText(test).width>maxW){out.push(line.trimEnd());line=t.trimStart();}else line=test;
+    }
+    out.push(line);
+  }
+  return out;
+}
+function boxGeom(m){
+  const fs=m.size,pad=fs*.45,lh=fs*1.35,txt=(m.text||'').trim()||'…';
+  const lines=wrap(txt,fs,fs*16);mctx.font='500 '+fs+'px '+F;
+  const w=Math.max(fs*2,...lines.map(l=>mctx.measureText(l).width))+pad*2,h=lines.length*lh+pad*2-(lh-fs)*.5;
+  return{x:m.box.x,y:m.box.y,w,h,lines,fs,pad,lh};
+}
+function calloutAnchor(m,g){const left=m.tip.x<g.x+g.w/2;return{x:left?g.x:g.x+g.w,y:g.y+Math.min(g.h/2,g.lh)};}
+function badgePos(m){if(m.type==='cloud'){const r=normRect(m.rect);return{x:r.x,y:r.y};}const g=boxGeom(m);return{x:g.x,y:g.y};}
+function normRect(r){return{x:Math.min(r.x,r.x+r.w),y:Math.min(r.y,r.y+r.h),w:Math.abs(r.w),h:Math.abs(r.h)};}
+function cloudPts(r0,s){
+  const r=normRect(r0),p=[[r.x,r.y],[r.x+r.w,r.y],[r.x+r.w,r.y+r.h],[r.x,r.y+r.h]],seg=[];
+  for(let e=0;e<4;e++){
+    const[x0,y0]=p[e],[x1,y1]=p[(e+1)%4],len=Math.hypot(x1-x0,y1-y0)||1;
+    const n=Math.max(2,Math.round(len/s)),ux=(x1-x0)/len,uy=(y1-y0)/len,nx=uy,ny=-ux,st=len/n;
+    for(let k=0;k<n;k++){const ax=x0+ux*st*k,ay=y0+uy*st*k,bx=x0+ux*st*(k+1),by=y0+uy*st*(k+1);
+      seg.push([(ax+bx)/2+nx*st*.6,(ay+by)/2+ny*st*.6,bx,by]);}
+  }
+  return{start:p[0],seg};
+}
+function arrowHead(tip,from,s){
+  const dx=tip.x-from.x,dy=tip.y-from.y,L=Math.hypot(dx,dy)||1,ux=dx/L,uy=dy/L,a=s*.9,b=s*.38;
+  return[[tip.x,tip.y],[tip.x-ux*a-uy*b,tip.y-uy*a+ux*b],[tip.x-ux*a+uy*b,tip.y-uy*a-ux*b]];
+}
+
+/* ---------- load ---------- */
+async function openFile(f){
+  if(!f)return;
+  if(!PDFJS){setStatus('โหลดตัวอ่าน PDF ไม่สำเร็จ ตรวจการเชื่อมต่ออินเทอร์เน็ตแล้วรีเฟรชหน้า',true);return;}
+  if(f.type!=='application/pdf'&&!/\.pdf$/i.test(f.name)){setStatus('รองรับเฉพาะไฟล์ PDF',true);return;}
+  await openBytes(f.name,new Uint8Array(await f.arrayBuffer()));
+}
+async function openBytes(name,b){
+  setStatus('กำลังเปิด '+name+'…');
+  try{doc=await PDFJS.getDocument({data:b.slice()}).promise;}catch(e){console.error(e);setStatus('เปิดไฟล์ไม่ได้ ไฟล์อาจเสียหายหรือตั้งรหัสผ่านไว้',true);return;}
+  bytes=b;fileName=name;numPages=doc.numPages;items=[];nextNo=1;sel=null;draft=null;
+  storeKey='markup:'+((doc.fingerprints&&doc.fingerprints[0])||name);restore();
+  $('#fname').textContent=name+' ('+numPages+' หน้า)';
+  const s=$('#page');s.innerHTML='';for(let i=1;i<=numPages;i++){const o=document.createElement('option');o.value=o.textContent=i;s.appendChild(o);}
+  await showPage(1);renderList();
+}
+async function showPage(n){
+  const tok=++loadTok;pg=n;$('#page').value=n;draft=null;
+  setStatus('กำลังเรนเดอร์แบบ…');
+  try{
+    const page=await doc.getPage(n),v1=page.getViewport({scale:1});wPt=v1.width;hPt=v1.height;
+    const s=Math.min(3,Math.sqrt(MAX_PX/(wPt*hPt))),vp=page.getViewport({scale:s});
+    const c=document.createElement('canvas');c.width=Math.floor(vp.width);c.height=Math.floor(vp.height);
+    const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);
+    await page.render({canvasContext:x,viewport:vp}).promise;
+    if(tok!==loadTok)return;
+    cv.width=c.width;cv.height=c.height;cv.getContext('2d').drawImage(c,0,0);
+    ov.setAttribute('viewBox','0 0 '+wPt+' '+hPt);
+    sheet.classList.remove('hidden');$('#empty').classList.add('hidden');
+    fit();setStatus('');renderList();
+  }catch(e){console.error(e);if(tok===loadTok)setStatus('เรนเดอร์หน้านี้ไม่สำเร็จ',true);}
+}
+$('#file').addEventListener('change',e=>{openFile(e.target.files[0]);e.target.value='';});
+$('#page').addEventListener('change',e=>showPage(+e.target.value));
+const drop=$('#drop');
+drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('drag');});
+drop.addEventListener('dragleave',()=>drop.classList.remove('drag'));
+drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('drag');openFile(e.dataTransfer.files[0]);});
+
+/* ---------- persistence ---------- */
+function save(){if(!storeKey)return;clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(storeKey,JSON.stringify({v:1,nextNo,items}));}catch(e){}},300);}
+function restore(){try{const d=JSON.parse(localStorage.getItem(storeKey)||'null');if(d&&d.v===1&&Array.isArray(d.items)){items=d.items.filter(m=>m.page<=numPages);nextNo=d.nextNo||items.length+1;}}catch(e){}}
+
+/* ---------- drawing overlay ---------- */
+function mkSVG(m,isSel){
+  const c=m.color,lw=m.size*.13,o=m.done?.45:1;let h='<g data-id="'+m.id+'" opacity="'+o+'">';
+  const hit='stroke="transparent" stroke-width="'+m.size*.9+'" fill="none"';
+  if(m.type==='cloud'){
+    const cp=cloudPts(m.rect,m.size*1.6);let d='M'+cp.start[0]+' '+cp.start[1];for(const q of cp.seg)d+='Q'+q.join(' ');d+='Z';
+    h+='<path d="'+d+'" '+hit+'/><path d="'+d+'" fill="none" stroke="'+c+'" stroke-width="'+lw+'" stroke-linejoin="round"/>';
+  }else{
+    const g=boxGeom(m);
+    if(m.type==='callout'){
+      const a=calloutAnchor(m,g),ah=arrowHead(m.tip,a,m.size);
+      h+='<line x1="'+a.x+'" y1="'+a.y+'" x2="'+m.tip.x+'" y2="'+m.tip.y+'" '+hit+'/>';
+      h+='<line x1="'+a.x+'" y1="'+a.y+'" x2="'+m.tip.x+'" y2="'+m.tip.y+'" stroke="'+c+'" stroke-width="'+lw+'"/>';
+      h+='<polygon points="'+ah.map(p=>p.join(',')).join(' ')+'" fill="'+c+'"/>';
+    }
+    h+='<rect x="'+g.x+'" y="'+g.y+'" width="'+g.w+'" height="'+g.h+'" fill="#fff" fill-opacity=".92" stroke="'+c+'" stroke-width="'+lw*.8+'"/>';
+    g.lines.forEach((l,i)=>{h+='<text class="mk-text" x="'+(g.x+g.pad)+'" y="'+(g.y+g.pad+g.fs*.85+i*g.lh)+'" font-size="'+g.fs+'" fill="'+((m.text||'').trim()?c:'#9AA4A8')+'">'+esc(l)+'</text>';});
+  }
+  const b=badgePos(m),r=m.size*.72;
+  h+='<circle cx="'+b.x+'" cy="'+b.y+'" r="'+r+'" fill="'+c+'"/><text x="'+b.x+'" y="'+b.y+'" font-size="'+r*1.15+'" fill="#fff" font-weight="700" text-anchor="middle" dominant-baseline="central" style="font-family:Arial,sans-serif">'+m.no+'</text>';
+  if(isSel){const bb=bbox(m),p=m.size*.5;h+='<rect x="'+(bb.x-p)+'" y="'+(bb.y-p)+'" width="'+(bb.w+2*p)+'" height="'+(bb.h+2*p)+'" fill="none" stroke="#1670C2" stroke-width="'+1.2/zoom+'" stroke-dasharray="'+4/zoom+' '+3/zoom+'"/>';}
+  return h+'</g>';
+}
+function bbox(m){
+  if(m.type==='cloud'){const r=normRect(m.rect),s=m.size;return{x:r.x-s,y:r.y-s,w:r.w+2*s,h:r.h+2*s};}
+  const g=boxGeom(m);if(m.type==='text')return{x:g.x,y:g.y,w:g.w,h:g.h};
+  const x0=Math.min(g.x,m.tip.x),y0=Math.min(g.y,m.tip.y);return{x:x0,y:y0,w:Math.max(g.x+g.w,m.tip.x)-x0,h:Math.max(g.y+g.h,m.tip.y)-y0};
+}
+function draw(){
+  if(!wPt){ov.innerHTML='';return;}
+  let h='';for(const m of items)if(m.page===pg)h+=mkSVG(m,m.id===sel);
+  if(draft){
+    const c=color(),s=sizeFor();
+    if(draft.type==='cloud'&&draft.rect){const cp=cloudPts(draft.rect,s*1.6);let d='M'+cp.start.join(' ');for(const q of cp.seg)d+='Q'+q.join(' ');h+='<path d="'+d+'Z" fill="none" stroke="'+c+'" stroke-width="'+s*.13+'" stroke-dasharray="'+s*.5+' '+s*.3+'"/>';}
+    if(draft.type==='callout'&&draft.tip){const e=hover||draft.tip;h+='<line x1="'+draft.tip.x+'" y1="'+draft.tip.y+'" x2="'+e.x+'" y2="'+e.y+'" stroke="'+c+'" stroke-width="'+s*.13+'" stroke-dasharray="'+s*.5+' '+s*.3+'"/><circle cx="'+draft.tip.x+'" cy="'+draft.tip.y+'" r="'+s*.25+'" fill="'+c+'"/>';}
+  }
+  ov.innerHTML=h;
+}
+const sizeFor=()=>Math.min(wPt,hPt)/62;
+
+/* ---------- list ---------- */
+function renderList(){
+  const ul=$('#list'),f=$('#filter').value;ul.innerHTML='';
+  const shown=items.filter(m=>f==='all'||(f==='open'&&!m.done)||(f==='page'&&m.page===pg)).sort((a,b)=>a.page-b.page||a.no-b.no);
+  $('#emptyList').classList.toggle('hidden',items.length>0);
+  const open=items.filter(m=>!m.done).length;$('#cnt').textContent=items.length?'('+open+' ยังไม่แก้ / '+items.length+')':'';
+  for(const m of shown){
+    const li=document.createElement('li');li.dataset.id=m.id;if(m.id===sel)li.classList.add('sel');if(m.done)li.classList.add('done');
+    li.innerHTML='<div class="hd"><span class="num" style="background:'+m.color+'">'+m.no+'</span>'+KIND[m.type]+' · หน้า '+m.page+'<span class="sp"></span><button aria-label="ลบความเห็น '+m.no+'">✕</button></div>'
+      +'<textarea rows="2" aria-label="ความเห็นที่ '+m.no+'" placeholder="เขียนความเห็น…">'+esc(m.text||'')+'</textarea>'
+      +'<div class="ft"><label><input type="checkbox"'+(m.done?' checked':'')+'>แก้แล้ว</label><span>'+esc(m.author||'')+(m.author?' · ':'')+esc(m.date||'')+'</span></div>';
+    li.querySelector('.hd').onclick=e=>{if(e.target.closest('button'))return;focusItem(m,false);};
+    li.querySelector('.hd button').onclick=()=>removeItem(m.id);
+    const ta=li.querySelector('textarea');
+    ta.onfocus=()=>{if(sel!==m.id){sel=m.id;markSel();if(m.page!==pg)showPage(m.page).then(()=>scrollTo(m));else{draw();}}};
+    ta.oninput=()=>{m.text=ta.value;if(m.page===pg)draw();save();};
+    li.querySelector('.ft input').onchange=e=>{m.done=e.target.checked;li.classList.toggle('done',m.done);draw();save();renderCount();};
+    ul.appendChild(li);
+  }
+  const has=items.length>0;$('#pdf').disabled=!has;$('#csv').disabled=!has;save();
+}
+function renderCount(){const open=items.filter(m=>!m.done).length;$('#cnt').textContent=items.length?'('+open+' ยังไม่แก้ / '+items.length+')':'';}
+function markSel(){document.querySelectorAll('#list li').forEach(li=>li.classList.toggle('sel',+li.dataset.id===sel));}
+$('#filter').onchange=renderList;
+async function focusItem(m,edit){
+  sel=m.id;if(m.page!==pg)await showPage(m.page);
+  draw();markSel();scrollTo(m);
+  const li=document.querySelector('#list li[data-id="'+m.id+'"]');
+  if(li){if(window.matchMedia('(min-width:821px)').matches)li.scrollIntoView({block:'nearest'});if(edit)li.querySelector('textarea').focus({preventScroll:true});}
+}
+function scrollTo(m){
+  const b=bbox(m),cx=(b.x+b.w/2)*zoom,cy=(b.y+b.h/2)*zoom,sr=sheet.getBoundingClientRect(),vr=viewer.getBoundingClientRect();
+  const px=sr.left-vr.left+viewer.scrollLeft,py=sr.top-vr.top+viewer.scrollTop;
+  if(cx+px-viewer.scrollLeft<0||cx+px-viewer.scrollLeft>viewer.clientWidth||cy+py-viewer.scrollTop<0||cy+py-viewer.scrollTop>viewer.clientHeight){
+    viewer.scrollLeft=px+cx-viewer.clientWidth/2;viewer.scrollTop=py+cy-viewer.clientHeight/2;}
+}
+function removeItem(id){items=items.filter(m=>m.id!==id);if(sel===id)sel=null;renderList();draw();}
+function create(m){
+  m.id=Date.now()+Math.random();m.no=nextNo++;m.page=pg;m.color=color();m.size=sizeFor();m.text='';m.done=false;
+  m.author=$('#author').value.trim();m.date=new Date().toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric'});
+  items.push(m);sel=m.id;renderList();draw();focusItem(m,true);
+}
+
+/* ---------- tools & pointer ---------- */
+function setTool(t){tool=t;draft=null;document.querySelectorAll('[data-tool]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.tool===t)));sheet.classList.toggle('draw',t!=='select');draw();}
+document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>setTool(b.dataset.tool));
+function toPt(e){const r=sheet.getBoundingClientRect();return{x:(e.clientX-r.left)/r.width*wPt,y:(e.clientY-r.top)/r.height*hPt};}
+let drag=null,pan=null;
+sheet.addEventListener('pointerdown',e=>{
+  if(!wPt||e.button===2)return;
+  if(e.button===1){pan={x:e.clientX,y:e.clientY,l:viewer.scrollLeft,t:viewer.scrollTop};e.preventDefault();return;}
+  const p=toPt(e),g=e.target.closest('[data-id]');
+  if(tool==='select'){
+    if(g){const m=items.find(x=>String(x.id)===g.dataset.id);if(!m)return;
+      sel=m.id;markSel();
+      const onTip=m.type==='callout'&&Math.hypot(p.x-m.tip.x,p.y-m.tip.y)<m.size*1.2;
+      drag={m,start:p,orig:JSON.parse(JSON.stringify({rect:m.rect,tip:m.tip,box:m.box})),part:onTip?'tip':'all',moved:false};
+      sheet.setPointerCapture(e.pointerId);draw();e.preventDefault();
+    }else{
+      if(sel!==null){sel=null;markSel();draw();}
+      if(e.pointerType==='mouse'){pan={x:e.clientX,y:e.clientY,l:viewer.scrollLeft,t:viewer.scrollTop};sheet.classList.add('panning');}
+    }
+    return;
+  }
+  e.preventDefault();
+  if(tool==='cloud'){draft={type:'cloud',start:p,rect:{x:p.x,y:p.y,w:0,h:0}};sheet.setPointerCapture(e.pointerId);}
+  else if(tool==='callout'){
+    if(!draft||!draft.tip){draft={type:'callout',tip:p};hover=p;draw();}
+    else{const tip=draft.tip;draft=null;create({type:'callout',tip,box:{x:p.x,y:p.y-sizeFor()*.9}});}
+  }
+  else if(tool==='text'){create({type:'text',box:{x:p.x,y:p.y-sizeFor()*.9}});}
+});
+sheet.addEventListener('pointermove',e=>{
+  if(pan){viewer.scrollLeft=pan.l-(e.clientX-pan.x);viewer.scrollTop=pan.t-(e.clientY-pan.y);return;}
+  if(!wPt)return;const p=toPt(e);
+  if(drag){
+    const dx=p.x-drag.start.x,dy=p.y-drag.start.y,m=drag.m,o=drag.orig;if(Math.hypot(dx,dy)>.5)drag.moved=true;
+    if(drag.part==='tip')m.tip={x:o.tip.x+dx,y:o.tip.y+dy};
+    else{if(o.rect)m.rect={...o.rect,x:o.rect.x+dx,y:o.rect.y+dy};if(o.tip)m.tip={x:o.tip.x+dx,y:o.tip.y+dy};if(o.box)m.box={x:o.box.x+dx,y:o.box.y+dy};}
+    draw();return;
+  }
+  if(draft&&draft.type==='cloud'&&draft.start){draft.rect={x:draft.start.x,y:draft.start.y,w:p.x-draft.start.x,h:p.y-draft.start.y};draw();}
+  else if(draft&&draft.type==='callout'){hover=p;draw();}
+});
+function endPtr(){
+  if(pan){pan=null;sheet.classList.remove('panning');}
+  if(drag){if(drag.moved)save();drag=null;}
+  if(draft&&draft.type==='cloud'&&draft.start){
+    const r=normRect(draft.rect),min=sizeFor()*1.5;draft=null;
+    if(r.w>min&&r.h>min)create({type:'cloud',rect:r});else draw();
+  }
+}
+sheet.addEventListener('pointerup',endPtr);sheet.addEventListener('pointercancel',endPtr);
+document.addEventListener('keydown',e=>{
+  if(e.target.matches('input,textarea,select'))return;
+  if(e.key==='Escape'){draft=null;sel=null;markSel();draw();}
+  else if((e.key==='Delete'||e.key==='Backspace')&&sel!==null){e.preventDefault();removeItem(sel);}
+  else if(!e.ctrlKey&&!e.metaKey){const k={v:'select',c:'cloud',a:'callout',t:'text'}[e.key.toLowerCase()];if(k)setTool(k);}
+});
+
+/* ---------- zoom ---------- */
+function applyZoom(){sheet.style.width=wPt*zoom+'px';sheet.style.height=hPt*zoom+'px';$('#zoomv').textContent=Math.round(zoom*100)+'%';draw();}
+const fitZoom=()=>wPt?Math.min((viewer.clientWidth-32)/wPt,(viewer.clientHeight-32)/hPt):1;
+function fit(){zoom=fitZoom();applyZoom();viewer.scrollTo(0,0);}
+function zoomAt(f,cx,cy){
+  if(!wPt)return;const r=viewer.getBoundingClientRect();cx=cx??r.left+r.width/2;cy=cy??r.top+r.height/2;
+  const sr=sheet.getBoundingClientRect(),px=(cx-sr.left)/zoom,py=(cy-sr.top)/zoom;
+  zoom=clamp(zoom*f,Math.min(fitZoom(),.1),10);applyZoom();
+  const nr=sheet.getBoundingClientRect();viewer.scrollLeft+=nr.left+px*zoom-cx;viewer.scrollTop+=nr.top+py*zoom-cy;
+}
+$('#zin').onclick=()=>zoomAt(1.4);$('#zout').onclick=()=>zoomAt(1/1.4);$('#zfit').onclick=fit;
+viewer.addEventListener('wheel',e=>{if(e.ctrlKey||e.metaKey){e.preventDefault();zoomAt(e.deltaY<0?1.15:1/1.15,e.clientX,e.clientY);}},{passive:false});
+window.addEventListener('resize',()=>{if(wPt&&zoom<fitZoom())fit();});
+
+/* ---------- export ---------- */
+async function saveFile(fn,data){
+  try{await TS.save(fn,data);setStatus('บันทึกแล้ว');}catch(e){console.error(e);setStatus('บันทึกไฟล์ไม่สำเร็จ',true);}
+}
+const baseName=()=>fileName.replace(/\.pdf$/i,'');
+function exportList(){return items.filter(m=>$('#incDone').checked||!m.done).sort((a,b)=>a.page-b.page||a.no-b.no);}
+$('#csv').onclick=()=>{
+  const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  const rows=[['ลำดับ','หน้า','ประเภท','ความเห็น','สถานะ','ผู้ตรวจ','วันที่'].map(q).join(',')];
+  for(const m of exportList())rows.push([m.no,m.page,KIND[m.type],m.text||'',m.done?'แก้แล้ว':'ยังไม่แก้',m.author||'',m.date||''].map(q).join(','));
+  saveFile(baseName()+' – ความเห็น.csv','\ufeff'+rows.join('\r\n'));
+};
+function hexRGB(h){const n=parseInt(h.slice(1),16);return PDFLib.rgb((n>>16&255)/255,(n>>8&255)/255,(n&255)/255);}
+function boxCanvas(m,g){
+  const k=4,c=document.createElement('canvas');c.width=Math.ceil(g.w*k);c.height=Math.ceil(g.h*k);
+  const x=c.getContext('2d');x.scale(k,k);const lw=m.size*.13*.8;
+  x.fillStyle='rgba(255,255,255,.95)';x.fillRect(0,0,g.w,g.h);x.strokeStyle=m.color;x.lineWidth=lw;x.strokeRect(lw/2,lw/2,g.w-lw,g.h-lw);
+  x.fillStyle=m.color;x.font='500 '+g.fs+'px '+F;x.textBaseline='alphabetic';
+  g.lines.forEach((l,i)=>x.fillText(l,g.pad,g.pad+g.fs*.85+i*g.lh));
+  return c;
+}
+$('#pdf').onclick=async()=>{
+  if(!window.PDFLib){setStatus('โหลดตัวแก้ไข PDF ไม่สำเร็จ ตรวจการเชื่อมต่ออินเทอร์เน็ตแล้วรีเฟรชหน้า',true);return;}
+  const btn=$('#pdf');btn.disabled=true;setStatus('กำลังสร้างแบบพร้อม markup…');
+  try{
+    try{await document.fonts.load('500 40px "IBM Plex Sans Thai"');}catch(e){}
+    const{PDFDocument,StandardFonts,degrees,PDFName,PDFHexString,PDFString,rgb}=PDFLib;
+    const out=await PDFDocument.load(bytes,{ignoreEncryption:true}),font=await out.embedFont(StandardFonts.HelveticaBold),pages=out.getPages(),ctx=out.context;
+    out.setProducer(TS.producer);
+    for(const m of exportList()){
+      const page=pages[m.page-1];if(!page)continue;
+      const cb=page.getCropBox(),rot=((page.getRotation().angle%360)+360)%360,W=cb.width,H=cb.height,VH=rot%180?W:H;
+      const T=(x,y)=>{const vy=VH-y;let ux=x,uy=vy;if(rot===90){ux=W-vy;uy=x;}else if(rot===180){ux=W-x;uy=H-vy;}else if(rot===270){ux=vy;uy=H-x;}return[cb.x+ux,cb.y+uy];};
+      const P=(x,y)=>{const[a,b]=T(x,y);return a.toFixed(2)+' '+(-b).toFixed(2);};
+      const col=hexRGB(m.color),lw=m.size*.13,op=m.done?.5:1;
+      if(m.type==='cloud'){
+        const cp=cloudPts(m.rect,m.size*1.6);let d='M'+P(...cp.start);for(const q of cp.seg)d+=' Q'+P(q[0],q[1])+' '+P(q[2],q[3]);d+=' Z';
+        page.drawSvgPath(d,{x:0,y:0,borderColor:col,borderWidth:lw,borderOpacity:op});
+      }else{
+        const g=boxGeom(m);
+        if(m.type==='callout'){
+          const a=calloutAnchor(m,g),ah=arrowHead(m.tip,a,m.size);
+          page.drawSvgPath('M'+P(a.x,a.y)+' L'+P(m.tip.x,m.tip.y),{x:0,y:0,borderColor:col,borderWidth:lw,borderOpacity:op});
+          page.drawSvgPath('M'+P(...ah[0])+' L'+P(...ah[1])+' L'+P(...ah[2])+' Z',{x:0,y:0,color:col,opacity:op});
+        }
+        const img=await out.embedPng(await new Promise(r=>boxCanvas(m,g).toBlob(b=>b.arrayBuffer().then(r),'image/png')));
+        const[ax,ay]=T(g.x,g.y+g.h);page.drawImage(img,{x:ax,y:ay,width:g.w,height:g.h,rotate:degrees(rot),opacity:op});
+      }
+      const b=badgePos(m),r=m.size*.72,[bx,by]=T(b.x,b.y);
+      page.drawCircle({x:bx,y:by,size:r,color:col,opacity:op});
+      const t=String(m.no),fs=r*1.15,tw=font.widthOfTextAtSize(t,fs),[tx,ty]=T(b.x-tw/2,b.y+fs*.36);
+      page.drawText(t,{x:tx,y:ty,size:fs,font,color:rgb(1,1,1),rotate:degrees(rot)});
+      if($('#notes').checked){
+        const[nx,ny]=T(b.x+r+9,b.y-r-2);const n=ctx.obj({Type:'Annot',Subtype:'Text',Rect:[nx-8,ny-8,nx+8,ny+8],Name:'Comment',Open:false,F:28});
+        n.set(PDFName.of('Contents'),PDFHexString.fromText('#'+m.no+' '+(m.text||'')+(m.done?' (แก้แล้ว)':'')));
+        if(m.author)n.set(PDFName.of('T'),PDFHexString.fromText(m.author));
+        const c=col;n.set(PDFName.of('C'),ctx.obj([c.red,c.green,c.blue]));
+        const ref=ctx.register(n),ex=page.node.lookup(PDFName.of('Annots'));
+        if(ex&&ex.push)ex.push(ref);else page.node.set(PDFName.of('Annots'),ctx.obj([ref]));
+      }
+    }
+    await saveFile(baseName()+' (markup).pdf',new Blob([await out.save()],{type:'application/pdf'}));
+  }catch(e){console.error(e);setStatus('สร้างไฟล์ไม่สำเร็จ ไฟล์อาจเข้ารหัสหรือเสียหาย',true);}
+  btn.disabled=!items.length;
+};
+
+/* ---------- demo ---------- */
+async function demo(){
+  if(!window.PDFLib||!PDFJS){setStatus('โหลดไลบรารีไม่สำเร็จ ตรวจการเชื่อมต่ออินเทอร์เน็ต',true);return;}
+  const{PDFDocument,StandardFonts,rgb}=PDFLib,d=await PDFDocument.create(),f=await d.embedFont(StandardFonts.HelveticaBold);
+  for(const no of['A-101','A-102']){
+    const p=d.addPage([1190.55,841.89]),w=1190.55,h=841.89;
+    p.drawRectangle({x:20,y:20,width:w-40,height:h-40,borderWidth:1.5,borderColor:rgb(0,0,0)});
+    p.drawRectangle({x:w-290,y:20,width:270,height:110,borderWidth:1,borderColor:rgb(0,0,0)});
+    p.drawText(no,{x:w-270,y:45,size:28,font:f});
+    p.drawRectangle({x:150,y:200,width:600,height:420,borderWidth:2.5,borderColor:rgb(0,0,0)});
+    p.drawLine({start:{x:450,y:200},end:{x:450,y:620},thickness:2,color:rgb(0,0,0)});
+    p.drawLine({start:{x:150,y:400},end:{x:450,y:400},thickness:2,color:rgb(0,0,0)});
+    for(let i=0;i<8;i++)p.drawLine({start:{x:620,y:260+i*22},end:{x:720,y:260+i*22},thickness:.8,color:rgb(0,0,0)});
+  }
+  await openBytes('แบบตัวอย่าง A-101.pdf',await d.save());
+}
+$('#demo').onclick=demo;$('#demo2').onclick=demo;
+if(!PDFJS)setStatus('โหลดตัวอ่าน PDF ไม่สำเร็จ ตรวจการเชื่อมต่ออินเทอร์เน็ตแล้วรีเฟรชหน้า',true);
+})();
+</script>
+</body>
+</html>

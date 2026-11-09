@@ -40,6 +40,7 @@ import { toolContentPl } from './pl';
 import { toolContentCs } from './cs';
 import { toolContentHi } from './hi';
 import { toolContentTh } from './th';
+import { getArchitectToolContent } from './architect';
 import { ToolContent } from '@/types/tool';
 import type { Locale } from '@/lib/i18n/config';
 
@@ -74,6 +75,10 @@ export function getToolContent(locale: Locale, toolId: string): ToolContent | un
     hi: toolContentHi,
     th: toolContentTh,
   };
+
+  // TectSkill PDF: architect tools live in their own content file
+  const architectContent = getArchitectToolContent(locale, toolId);
+  if (architectContent) return architectContent;
 
   const localeContent = contentMap[locale];
   if (localeContent && localeContent[toolId]) {

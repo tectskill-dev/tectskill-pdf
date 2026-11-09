@@ -13,7 +13,10 @@ describe('tool content integrity', () => {
 
   it('provides complete Polish tool content without English fallback', () => {
     const englishToolIds = Object.keys(toolContentEn);
-    const configuredToolIds = getAllTools().map((tool) => tool.id);
+    // TectSkill PDF: architect tools have their own Thai/English content file
+    const configuredToolIds = getAllTools()
+      .filter((tool) => tool.category !== 'architect')
+      .map((tool) => tool.id);
     const missingTools = englishToolIds.filter((toolId) => !toolContentPl[toolId]);
     const missingConfiguredTools = configuredToolIds.filter((toolId) => !toolContentPl[toolId]);
     const fallbackTools = englishToolIds.filter(
@@ -31,7 +34,10 @@ describe('tool content integrity', () => {
 
   it('provides complete Czech tool content without English fallback', () => {
     const englishToolIds = Object.keys(toolContentEn);
-    const configuredToolIds = getAllTools().map((tool) => tool.id);
+    // TectSkill PDF: architect tools have their own Thai/English content file
+    const configuredToolIds = getAllTools()
+      .filter((tool) => tool.category !== 'architect')
+      .map((tool) => tool.id);
     const missingTools = englishToolIds.filter((toolId) => !toolContentCs[toolId]);
     const missingConfiguredTools = configuredToolIds.filter((toolId) => !toolContentCs[toolId]);
     const fallbackTools = englishToolIds.filter(
@@ -49,7 +55,10 @@ describe('tool content integrity', () => {
 
   it('provides complete Hindi tool content without English fallback', () => {
     const englishToolIds = Object.keys(toolContentEn);
-    const configuredToolIds = getAllTools().map((tool) => tool.id);
+    // TectSkill PDF: architect tools have their own Thai/English content file
+    const configuredToolIds = getAllTools()
+      .filter((tool) => tool.category !== 'architect')
+      .map((tool) => tool.id);
     const missingTools = englishToolIds.filter((toolId) => !toolContentHi[toolId]);
     const missingConfiguredTools = configuredToolIds.filter((toolId) => !toolContentHi[toolId]);
     const fallbackTools = englishToolIds.filter(

@@ -69,10 +69,23 @@ import {
     ImageDown,
     Table,
     LayoutDashboard,
-    TabletSmartphone
+    TabletSmartphone,
+    FileDiff,
+    BookCopy,
+    MessageSquareText,
+    Shrink,
+    Printer,
+    DraftingCompass,
 } from 'lucide-react';
 
 export const ICON_MAP: Record<string, LucideIcon> = {
+    // TectSkill PDF: architect tools
+    'file-diff': FileDiff,
+    'book-copy': BookCopy,
+    'message-square-text': MessageSquareText,
+    'shrink': Shrink,
+    'printer': Printer,
+    'drafting-compass': DraftingCompass,
     'pencil-ruler': PencilRuler,
     'combine': Merge,
     'merge': Merge,

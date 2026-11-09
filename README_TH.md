@@ -60,3 +60,22 @@ npm test           # รันชุดทดสอบ
   เพื่อให้แอปที่ติดตั้งไว้รู้ว่ามีเวอร์ชันใหม่
 
 workflow `Build Tauri` และ `Release` อ่านเลขจากไฟล์นี้อัตโนมัติ
+
+## เครื่องมือสำหรับสถาปนิก (หมวด "สำหรับสถาปนิก")
+
+7 เครื่องมืออยู่ใน `public/arch-tools/` เป็นไฟล์ HTML เดียวกับปลั๊กอิน WordPress "TectSkill PDF Tools"
+ฝังไลบรารีและฟอนต์ไว้ในเครื่องทั้งหมด (ใช้ออฟไลน์ได้) แอปแสดงผ่าน `src/components/tools/arch-tools/ArchToolFrame.tsx`
+
+| เครื่องมือ | หน้าในแอป | ไฟล์ |
+|---|---|---|
+| เทียบแบบ | `/tools/revision-compare` | `revision-compare.html` |
+| วัดตามสเกล | `/tools/measure-pdf-scale` | `measure-scale.html` |
+| รวมชุดแบบ | `/tools/sheet-set-builder` | `sheet-set.html` |
+| ประทับตราแบบ | `/tools/stamp-drawings` | `batch-stamp.html` |
+| ตรวจแบบ | `/tools/markup-drawings` | `markup.html` |
+| บีบอัดแบบ | `/tools/compress-drawings` | `compress.html` |
+| พิมพ์ย่อตามสเกล | `/tools/print-to-scale` | `print-scale.html` |
+
+ถ้าแก้เครื่องมือในปลั๊กอิน WordPress ให้คัดลอกไฟล์ `.html` ใหม่มาทับใน `public/arch-tools/`
+แล้วเปลี่ยนลิงก์ cdnjs / Google Fonts เป็น `vendor/...` และ `fonts/fonts.css` เหมือนไฟล์เดิม
+`brand.js` ในแอปมีส่วนเพิ่ม (ส่งไฟล์ให้แอปบันทึก) อย่าคัดลอกทับ

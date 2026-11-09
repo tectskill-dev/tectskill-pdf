@@ -1,0 +1,586 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>เทียบแบบ – Revision Compare | TectSkill</title>
+<meta name="description" content="เทียบแบบ PDF สองฉบับ หาจุดที่แก้ไขอัตโนมัติ พร้อมเมฆแก้ไขและรายงาน PDF ฟรี ไฟล์ไม่ออกจากเครื่อง">
+<link href="fonts/fonts.css" rel="stylesheet">
+<style>
+:root{
+  --bg:#E9ECEB; --panel:#F7F8F7; --ink:#1C2427; --muted:#5B676C; --line:#C9D0CF;
+  --rem:#D02438; --add:#1670C2; --cloud:#E07A00; --btn:#1C2427; --btn-ink:#F7F8F7;
+  --grid:rgba(28,36,39,.06);
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#141A1C; --panel:#1C2427; --ink:#E6EBEA; --muted:#98A4A8; --line:#2F3A3E;
+    --rem:#FF5A6A; --add:#4FA3F0; --cloud:#FF9A2E; --btn:#E6EBEA; --btn-ink:#141A1C;
+    --grid:rgba(230,235,234,.05); color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141A1C; --panel:#1C2427; --ink:#E6EBEA; --muted:#98A4A8; --line:#2F3A3E;
+  --rem:#FF5A6A; --add:#4FA3F0; --cloud:#FF9A2E; --btn:#E6EBEA; --btn-ink:#141A1C;
+  --grid:rgba(230,235,234,.05); color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.6 "IBM Plex Sans Thai",system-ui,-apple-system,"Segoe UI",sans-serif}
+.app{display:grid;grid-template-columns:320px 1fr;height:100%}
+aside{background:var(--panel);border-right:1px solid var(--line);overflow-y:auto;padding:20px 18px 28px}
+h1{font-size:22px;line-height:1.25;font-weight:600;margin:0 0 4px}
+.lede{color:var(--muted);font-size:13.5px;margin:0 0 18px}
+h2{font-size:14px;font-weight:600;margin:22px 0 8px}
+.slot{border:1.5px dashed var(--line);border-radius:10px;padding:10px 12px;margin-bottom:10px;transition:border-color .15s,background .15s}
+.slot.drag{border-color:var(--ink);background:var(--grid)}
+.slot-head{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px}
+.swatch{width:12px;height:12px;border-radius:3px;flex:none}
+.slot .name{font-size:13px;color:var(--muted);word-break:break-all;margin:4px 0 6px}
+.slot-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.file-btn{display:inline-block;cursor:pointer;font:inherit;font-size:13px;padding:5px 12px;border-radius:7px;border:1px solid var(--line);background:transparent;color:var(--ink)}
+.file-btn:hover{border-color:var(--ink)}
+.file-btn input{position:absolute;width:1px;height:1px;opacity:0}
+.file-btn:focus-within{outline:2px solid var(--add);outline-offset:2px}
+label.inline{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px}
+select,input[type=number]{font:inherit;font-size:13px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:3px 6px}
+input[type=number]{width:64px}
+.field{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:8px 0;font-size:13.5px}
+.field small{display:block;color:var(--muted);font-size:12px;line-height:1.35}
+.btn{font:inherit;font-weight:500;font-size:14px;border:0;border-radius:8px;padding:9px 14px;background:var(--btn);color:var(--btn-ink);cursor:pointer}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--add);outline-offset:2px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.check{display:flex;align-items:center;gap:9px;font-size:13.5px;margin:6px 0;cursor:pointer}
+.check input{accent-color:var(--ink);width:16px;height:16px}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg label{flex:1;text-align:center;font-size:13px;padding:6px 4px;cursor:pointer}
+.seg input{position:absolute;opacity:0;width:1px;height:1px}
+.seg label:has(input:checked){background:var(--btn);color:var(--btn-ink)}
+.seg label:has(input:focus-visible){outline:2px solid var(--add);outline-offset:-2px}
+#status{font-size:13px;color:var(--muted);min-height:1.6em;margin-top:10px}
+#status.err{color:var(--rem)}
+#list{list-style:none;padding:0;margin:0}
+#list button{width:100%;text-align:left;display:flex;gap:10px;align-items:center;font:inherit;font-size:13.5px;color:var(--ink);background:transparent;border:0;border-radius:7px;padding:6px 8px;cursor:pointer}
+#list button:hover{background:var(--grid)}
+#list button[aria-current="true"]{background:var(--grid);font-weight:600}
+.delta{width:22px;height:20px;flex:none;display:grid;place-items:end center;font-size:11px;font-weight:600;color:#fff;background:var(--cloud);clip-path:polygon(50% 0,100% 100%,0 100%);padding-bottom:1px}
+.kind{color:var(--muted);font-size:12.5px;margin-left:auto}
+.summary{font-size:13.5px;margin:0 0 6px}
+main{position:relative;display:flex;flex-direction:column;min-width:0;min-height:0}
+.toolbar{display:flex;gap:6px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);background:var(--panel);flex-wrap:wrap}
+.toolbar button{font:inherit;font-size:13px;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:7px;padding:4px 10px;cursor:pointer;min-width:34px}
+.toolbar button:hover{border-color:var(--ink)}
+.toolbar .sp{flex:1}
+#zoomv{font-size:13px;color:var(--muted);min-width:48px;text-align:center}
+#viewer{flex:1;overflow:auto;min-height:0;
+  background-color:var(--bg);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:24px 24px;cursor:grab}
+#viewer.panning{cursor:grabbing}
+.stage{display:flex;min-width:100%;min-height:100%;padding:16px}
+#out{margin:auto;display:block;background:#fff;box-shadow:0 0 0 1px var(--line);image-rendering:auto}
+.empty{position:absolute;inset:52px 0 0 0;display:grid;place-items:center;pointer-events:none;padding:24px;text-align:center}
+.empty div{max-width:360px;color:var(--muted);font-size:14px}
+.empty strong{display:block;color:var(--ink);font-size:17px;font-weight:600;margin-bottom:6px}
+.empty .btn{pointer-events:auto;margin-top:14px}
+.hidden{display:none!important}
+.warn{font-size:12.5px;color:var(--cloud);margin:6px 0 0}
+@media (max-width:820px){
+  .app{grid-template-columns:1fr;height:auto}
+  aside{border-right:0;border-bottom:1px solid var(--line)}
+  main{height:72vh;height:72svh}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<script src="brand.js" data-tool="revision-compare"></script>
+</head>
+<body>
+<div class="app">
+<aside>
+  <h1>เทียบแบบ</h1>
+  <p class="lede">วางแบบสองฉบับซ้อนกัน เส้นที่ถูกลบเป็นสีแดง เส้นที่เพิ่มเข้ามาเป็นสีน้ำเงิน ไฟล์ประมวลผลในเครื่องคุณเท่านั้น</p>
+
+  <div class="slot" id="slot-old">
+    <div class="slot-head"><span class="swatch" style="background:var(--rem)"></span>แบบเก่า</div>
+    <div class="name" id="name-old">ยังไม่ได้เลือกไฟล์</div>
+    <div class="slot-row">
+      <label class="file-btn">เลือก PDF<input type="file" accept="application/pdf,.pdf" id="file-old"></label>
+      <label class="inline hidden" id="pg-old-wrap">หน้า <select id="page-old"></select></label>
+    </div>
+  </div>
+  <div class="slot" id="slot-new">
+    <div class="slot-head"><span class="swatch" style="background:var(--add)"></span>แบบใหม่</div>
+    <div class="name" id="name-new">ยังไม่ได้เลือกไฟล์</div>
+    <div class="slot-row">
+      <label class="file-btn">เลือก PDF<input type="file" accept="application/pdf,.pdf" id="file-new"></label>
+      <label class="inline hidden" id="pg-new-wrap">หน้า <select id="page-new"></select></label>
+    </div>
+  </div>
+  <div class="row">
+    <button class="btn" id="run" disabled>เปรียบเทียบ</button>
+    <button class="btn ghost" id="demo">ลองกับแบบตัวอย่าง</button>
+  </div>
+  <div id="status" role="status" aria-live="polite"></div>
+
+  <h2>มุมมอง</h2>
+  <div class="seg" role="radiogroup" aria-label="มุมมอง">
+    <label><input type="radio" name="mode" value="diff" checked>ซ้อนสี</label>
+    <label><input type="radio" name="mode" value="old">แบบเก่า</label>
+    <label><input type="radio" name="mode" value="new">แบบใหม่</label>
+  </div>
+  <label class="check"><input type="checkbox" id="showRem" checked>แสดงส่วนที่ถูกลบ</label>
+  <label class="check"><input type="checkbox" id="showAdd" checked>แสดงส่วนที่เพิ่ม</label>
+  <label class="check"><input type="checkbox" id="fade" checked>ทำส่วนที่ไม่เปลี่ยนให้จาง</label>
+  <label class="check"><input type="checkbox" id="clouds" checked>ครอบจุดเปลี่ยนด้วยเมฆแก้ไข</label>
+
+  <h2>จุดที่เปลี่ยน</h2>
+  <p class="summary" id="summary">ยังไม่มีผลเปรียบเทียบ</p>
+  <ul id="list"></ul>
+  <button class="btn ghost" id="export" disabled style="margin-top:10px">ส่งออกรายงาน PDF</button>
+
+  <h2>ปรับแต่ง</h2>
+  <div class="field"><span>ความละเอียด<small>สูงขึ้นละเอียดขึ้น แต่ช้าลง</small></span>
+    <select id="dpi"><option value="72">72 dpi</option><option value="100" selected>100 dpi</option><option value="150">150 dpi</option><option value="200">200 dpi</option></select></div>
+  <div class="field"><span>ความคลาดเคลื่อนที่ยอมรับ<small>กันเส้นเหลื่อมเล็กน้อยไม่ให้นับเป็นการแก้ไข (พิกเซล)</small></span>
+    <input type="number" id="tol" min="0" max="6" step="1" value="1"></div>
+  <div class="field"><span>เลื่อนแบบใหม่ แนวนอน<small>ใช้เมื่อแบบสองฉบับวางไม่ตรงกัน</small></span>
+    <input type="number" id="dx" step="1" value="0"></div>
+  <div class="field"><span>เลื่อนแบบใหม่ แนวตั้ง</span>
+    <input type="number" id="dy" step="1" value="0"></div>
+  <div class="row" style="margin-top:4px"><button class="btn ghost" id="align" disabled>จัดตำแหน่งอัตโนมัติ</button><button class="btn ghost" id="resetAlign">รีเซ็ต</button></div>
+  <p class="warn hidden" id="warn"></p>
+</aside>
+
+<main>
+  <div class="toolbar">
+    <button id="prev" aria-label="จุดก่อนหน้า">‹ ก่อนหน้า</button>
+    <button id="next" aria-label="จุดถัดไป">ถัดไป ›</button>
+    <span class="sp"></span>
+    <button id="zout" aria-label="ย่อ">−</button>
+    <span id="zoomv">–</span>
+    <button id="zin" aria-label="ขยาย">+</button>
+    <button id="zfit">พอดีจอ</button>
+  </div>
+  <div id="viewer"><div class="stage"><canvas id="out" width="1" height="1"></canvas></div></div>
+  <div class="empty" id="empty"><div><strong>เลือกแบบเก่าและแบบใหม่</strong>ใช้ไฟล์ PDF จากโปรแกรมเขียนแบบได้เลย ถ้าเป็นชุดแบบหลายหน้า เลือกหน้าที่ต้องการเทียบได้ทีละหน้า<br><button class="btn ghost" id="demo2">ลองกับแบบตัวอย่าง</button></div></div>
+</main>
+</div>
+
+<script src="vendor/pdf.min.js"></script>
+<script src="vendor/pdf.worker.min.js"></script>
+<script src="vendor/jspdf.umd.min.js"></script>
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const PDFJS=window.pdfjsLib||null;
+if(PDFJS){PDFJS.GlobalWorkerOptions.workerSrc='vendor/pdf.worker.min.js';}
+const MAX_PX=14e6, INK=215;
+const src={old:null,new:null};
+let cache={};
+let R=null, zoom=1, cur=-1, busy=false;
+const out=$('#out'), octx=out.getContext('2d'), viewer=$('#viewer');
+
+function setStatus(t,err){const s=$('#status');s.textContent=t;s.classList.toggle('err',!!err);}
+const tick=()=>new Promise(r=>setTimeout(r,16));
+function mk(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;return c;}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+
+/* ---------- sources ---------- */
+async function loadFile(which,file){
+  if(!file)return;
+  if(!PDFJS){setStatus('โหลดตัวอ่าน PDF ไม่สำเร็จ ตรวจการเชื่อมต่ออินเทอร์เน็ตแล้วรีเฟรชหน้า',true);return;}
+  if(file.type!=='application/pdf'&&!/\.pdf$/i.test(file.name)){setStatus('รองรับเฉพาะไฟล์ PDF',true);return;}
+  setStatus('กำลังเปิด '+file.name+'…');
+  try{
+    const doc=await PDFJS.getDocument({data:await file.arrayBuffer()}).promise;
+    src[which]={kind:'pdf',doc,name:file.name,pages:doc.numPages};
+    if(src.old&&src.new&&(src.old.kind==='demo'||src.new.kind==='demo')){src[which==='old'?'new':'old']=null;updateSlot(which==='old'?'new':'old');}
+    updateSlot(which);setStatus('');
+    if(src.old&&src.new)run();
+  }catch(e){console.error(e);setStatus('เปิดไฟล์ไม่ได้ ไฟล์อาจเสียหายหรือตั้งรหัสผ่านไว้',true);}
+}
+function updateSlot(which){
+  const s=src[which];
+  $('#name-'+which).textContent=s?(s.kind==='pdf'?s.name+' ('+s.pages+' หน้า)':s.name):'ยังไม่ได้เลือกไฟล์';
+  const wrap=$('#pg-'+which+'-wrap'),sel=$('#page-'+which);
+  if(s&&s.kind==='pdf'&&s.pages>1){
+    sel.innerHTML='';for(let i=1;i<=s.pages;i++){const o=document.createElement('option');o.value=i;o.textContent=i;sel.appendChild(o);}
+    wrap.classList.remove('hidden');
+  }else{sel.innerHTML='<option value="1">1</option>';wrap.classList.add('hidden');}
+  $('#run').disabled=!(src.old&&src.new);
+}
+['old','new'].forEach(w=>{
+  $('#file-'+w).addEventListener('change',e=>{loadFile(w,e.target.files[0]);e.target.value='';});
+  $('#page-'+w).addEventListener('change',()=>run());
+  const slot=$('#slot-'+w);
+  slot.addEventListener('dragover',e=>{e.preventDefault();slot.classList.add('drag');});
+  slot.addEventListener('dragleave',()=>slot.classList.remove('drag'));
+  slot.addEventListener('drop',e=>{e.preventDefault();slot.classList.remove('drag');loadFile(w,e.dataTransfer.files[0]);});
+});
+function useDemo(){
+  src.old={kind:'demo',variant:'A',name:'แบบตัวอย่าง A-101 Rev.A'};
+  src.new={kind:'demo',variant:'B',name:'แบบตัวอย่าง A-101 Rev.B'};
+  updateSlot('old');updateSlot('new');run();
+}
+$('#demo').onclick=useDemo;$('#demo2').onclick=useDemo;
+
+/* ---------- rendering ---------- */
+async function getRender(which,dpi){
+  const s=src[which];const pg=s.kind==='pdf'?(+$('#page-'+which).value||1):1;
+  const key=[which,dpi,pg,s.name].join('|');
+  if(cache[key])return cache[key];
+  let c,reduced=false;
+  if(s.kind==='pdf'){
+    const page=await s.doc.getPage(pg);
+    let vp=page.getViewport({scale:dpi/72});
+    if(vp.width*vp.height>MAX_PX){vp=page.getViewport({scale:dpi/72*Math.sqrt(MAX_PX/(vp.width*vp.height))});reduced=true;}
+    c=mk(Math.floor(vp.width),Math.floor(vp.height));
+    const ctx=c.getContext('2d',{willReadFrequently:true});
+    ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);
+    await page.render({canvasContext:ctx,viewport:vp}).promise;
+  }else c=demoCanvas(s.variant,dpi);
+  const r={c,w:c.width,h:c.height,mask:inkMask(c),reduced};
+  cache[key]=r;return r;
+}
+function inkMask(c){
+  const d=c.getContext('2d',{willReadFrequently:true}).getImageData(0,0,c.width,c.height).data;
+  const m=new Uint8Array(c.width*c.height);
+  for(let i=0,j=0;i<m.length;i++,j+=4){const a=d[j+3];
+    const l=a<20?255:(d[j]*299+d[j+1]*587+d[j+2]*114)/1000;m[i]=l<INK?1:0;}
+  return m;
+}
+
+/* ---------- diff ---------- */
+function place(m,w,h,dx,dy,W,H){
+  if(!dx&&!dy&&w===W&&h===H)return m;
+  const o=new Uint8Array(W*H);
+  for(let y=0;y<h;y++){const ty=y+dy;if(ty<0||ty>=H)continue;const so=y*w,to=ty*W;
+    for(let x=0;x<w;x++){const tx=x+dx;if(tx>=0&&tx<W)o[to+tx]=m[so+x];}}
+  return o;
+}
+function dilate(m,W,H,r){
+  if(!r)return m;
+  const t=new Uint8Array(W*H),o=new Uint8Array(W*H);
+  for(let y=0;y<H;y++){const row=y*W;let cnt=0;
+    for(let x=0;x<=r&&x<W;x++)cnt+=m[row+x];
+    for(let x=0;x<W;x++){t[row+x]=cnt>0?1:0;const a=x+r+1,b=x-r;if(a<W)cnt+=m[row+a];if(b>=0)cnt-=m[row+b];}}
+  for(let x=0;x<W;x++){let cnt=0;
+    for(let y=0;y<=r&&y<H;y++)cnt+=t[y*W+x];
+    for(let y=0;y<H;y++){o[y*W+x]=cnt>0?1:0;const a=y+r+1,b=y-r;if(a<H)cnt+=t[a*W+x];if(b>=0)cnt-=t[b*W+x];}}
+  return o;
+}
+function findRegions(cls,W,H){
+  const cs=Math.max(8,Math.round(Math.max(W,H)/180));
+  const gw=Math.ceil(W/cs),gh=Math.ceil(H/cs);
+  const cr=new Uint32Array(gw*gh),ca=new Uint32Array(gw*gh);
+  for(let y=0;y<H;y++){const g=((y/cs)|0)*gw,row=y*W;
+    for(let x=0;x<W;x++){const k=cls[row+x];if(k===2)cr[g+((x/cs)|0)]++;else if(k===3)ca[g+((x/cs)|0)]++;}}
+  const minPx=Math.max(4,cs*cs*0.01);
+  const flag=new Uint8Array(gw*gh);
+  for(let i=0;i<flag.length;i++)flag[i]=(cr[i]+ca[i])>=minPx?1:0;
+  const f2=dilate(flag,gw,gh,1);
+  const seen=new Uint8Array(gw*gh),regs=[];
+  for(let i=0;i<f2.length;i++){
+    if(!f2[i]||seen[i])continue;
+    let x0=1e9,y0=1e9,x1=-1,y1=-1,rem=0,add=0;const st=[i];seen[i]=1;
+    while(st.length){const j=st.pop(),cx=j%gw,cy=(j/gw)|0;
+      if(flag[j]){x0=Math.min(x0,cx);y0=Math.min(y0,cy);x1=Math.max(x1,cx);y1=Math.max(y1,cy);rem+=cr[j];add+=ca[j];}
+      const nb=[[cx-1,cy],[cx+1,cy],[cx,cy-1],[cx,cy+1]];
+      for(const[nx,ny]of nb){if(nx<0||ny<0||nx>=gw||ny>=gh)continue;const k=ny*gw+nx;if(f2[k]&&!seen[k]){seen[k]=1;st.push(k);}}}
+    if(x1<0)continue;
+    const x=x0*cs,y=y0*cs;
+    regs.push({x,y,w:Math.min(W,(x1+1)*cs)-x,h:Math.min(H,(y1+1)*cs)-y,rem,add});
+  }
+  const band=H/8;
+  regs.sort((p,q)=>((p.y/band)|0)-((q.y/band)|0)||p.x-q.x);
+  return regs;
+}
+async function run(){
+  if(!src.old||!src.new||busy)return;
+  busy=true;$('#run').disabled=true;
+  const dpi=+$('#dpi').value;
+  try{
+    setStatus('กำลังเรนเดอร์แบบ…');await tick();
+    const a=await getRender('old',dpi),b=await getRender('new',dpi);
+    setStatus('กำลังเทียบ…');await tick();
+    const dx=parseInt($('#dx').value)||0,dy=parseInt($('#dy').value)||0,tol=clamp(parseInt($('#tol').value)||0,0,6);
+    const W=Math.max(a.w,b.w),H=Math.max(a.h,b.h);
+    const A=place(a.mask,a.w,a.h,0,0,W,H),B=place(b.mask,b.w,b.h,dx,dy,W,H);
+    const dA=dilate(A,W,H,tol),dB=dilate(B,W,H,tol);
+    const cls=new Uint8Array(W*H);
+    for(let i=0;i<cls.length;i++){
+      if(A[i]&&!dB[i])cls[i]=2;else if(B[i]&&!dA[i])cls[i]=3;else if(A[i]||B[i])cls[i]=1;}
+    const first=!R;
+    R={W,H,cls,regions:findRegions(cls,W,H),a,b,dx,dy,img:null};
+    cur=-1;
+    const warns=[];
+    if(Math.abs(a.w-b.w)/W>0.02||Math.abs(a.h-b.h)/H>0.02)warns.push('ขนาดกระดาษของสองไฟล์ไม่เท่ากัน ผลอาจคลาดเคลื่อน');
+    if(a.reduced||b.reduced)warns.push('หน้ากระดาษใหญ่มาก จึงลดความละเอียดลงอัตโนมัติ');
+    if(R.regions.length>60)warns.push('พบจุดเปลี่ยนมากผิดปกติ แบบอาจวางไม่ตรงกัน ลองปรับการเลื่อนแบบใหม่ หรือเพิ่มความคลาดเคลื่อนที่ยอมรับ');
+    $('#warn').textContent=warns.join(' · ');$('#warn').classList.toggle('hidden',!warns.length);
+    build();paint();
+    if(first||out.dataset.size!==W+'x'+H)fit();
+    out.dataset.size=W+'x'+H;
+    renderList();$('#empty').classList.add('hidden');setStatus('');
+    $('#export').disabled=false;$('#align').disabled=false;
+  }catch(e){console.error(e);setStatus('เทียบแบบไม่สำเร็จ ลองลดความละเอียดลงแล้วกดเปรียบเทียบอีกครั้ง',true);}
+  busy=false;$('#run').disabled=!(src.old&&src.new);
+}
+
+/* ---------- drawing ---------- */
+function build(){
+  if(!R)return;
+  const {W,H,cls}=R,img=new ImageData(W,H),d=img.data;
+  const sr=$('#showRem').checked,sa=$('#showAdd').checked,fade=$('#fade').checked;
+  const s=fade?[208,212,214]:[40,46,50];
+  for(let i=0,j=0;i<cls.length;i++,j+=4){
+    const k=cls[i];let r=255,g=255,b=255;
+    if(k===1){r=s[0];g=s[1];b=s[2];}
+    else if(k===2&&sr){r=208;g=36;b=56;}
+    else if(k===3&&sa){r=22;g=112;b=194;}
+    d[j]=r;d[j+1]=g;d[j+2]=b;d[j+3]=255;}
+  R.img=img;
+}
+function paint(){
+  if(!R)return;
+  const {W,H}=R;
+  if(out.width!==W||out.height!==H){out.width=W;out.height=H;}
+  const mode=document.querySelector('input[name=mode]:checked').value;
+  if(mode==='diff'&&R.img)octx.putImageData(R.img,0,0);
+  else{octx.fillStyle='#fff';octx.fillRect(0,0,W,H);
+    if(mode==='old')octx.drawImage(R.a.c,0,0);else octx.drawImage(R.b.c,R.dx,R.dy);}
+  if($('#clouds').checked)drawClouds(octx,cur);
+  applyZoom();
+}
+function cloud(c,x,y,w,h,s){
+  const p=[[x,y],[x+w,y],[x+w,y+h],[x,y+h]];
+  c.beginPath();c.moveTo(x,y);
+  for(let e=0;e<4;e++){
+    const[x0,y0]=p[e],[x1,y1]=p[(e+1)%4],len=Math.hypot(x1-x0,y1-y0);
+    const n=Math.max(2,Math.round(len/s)),ux=(x1-x0)/len,uy=(y1-y0)/len,nx=uy,ny=-ux,st=len/n;
+    for(let k=0;k<n;k++){
+      const ax=x0+ux*st*k,ay=y0+uy*st*k,bx=x0+ux*st*(k+1),by=y0+uy*st*(k+1);
+      c.quadraticCurveTo((ax+bx)/2+nx*st*.6,(ay+by)/2+ny*st*.6,bx,by);}
+  }
+  c.closePath();c.stroke();
+}
+function drawClouds(c,hi){
+  const lw=Math.max(2,R.W/1300),s=Math.max(14,R.W/110);
+  c.save();c.lineJoin='round';
+  R.regions.forEach((g,i)=>{
+    const pad=s*.5,x=g.x-pad,y=g.y-pad,w=g.w+pad*2,h=g.h+pad*2,on=i===hi;
+    c.lineWidth=on?lw*2.2:lw;c.strokeStyle=on?'#E07A00':'rgba(224,122,0,.8)';
+    cloud(c,x,y,w,h,s);
+    const z=s*1.15;
+    c.beginPath();c.moveTo(x,y-z);c.lineTo(x+z,y+z*.75);c.lineTo(x-z,y+z*.75);c.closePath();
+    c.fillStyle='#E07A00';c.fill();
+    c.fillStyle='#fff';c.font='600 '+Math.round(z*.85)+'px "IBM Plex Sans Thai",sans-serif';
+    c.textAlign='center';c.textBaseline='middle';c.fillText(String(i+1),x,y+z*.32);
+  });
+  c.restore();
+}
+function renderList(){
+  const ul=$('#list');ul.innerHTML='';
+  const n=R.regions.length;
+  $('#summary').textContent=n?'พบ '+n+' จุดที่เปลี่ยน':'ไม่พบความแตกต่าง';
+  R.regions.slice(0,200).forEach((g,i)=>{
+    const li=document.createElement('li'),b=document.createElement('button');
+    const kind=kindOf(g);
+    b.innerHTML='<span class="delta">'+(i+1)+'</span>จุดที่ '+(i+1)+'<span class="kind">'+kind+'</span>';
+    b.onclick=()=>goTo(i);
+    if(i===cur)b.setAttribute('aria-current','true');
+    li.appendChild(b);ul.appendChild(li);
+  });
+}
+
+/* ---------- view ---------- */
+function applyZoom(){
+  if(!R)return;
+  out.style.width=Math.round(R.W*zoom)+'px';out.style.height=Math.round(R.H*zoom)+'px';
+  $('#zoomv').textContent=Math.round(zoom*100)+'%';
+}
+function fitZoom(){return R?Math.min((viewer.clientWidth-32)/R.W,(viewer.clientHeight-32)/R.H):1;}
+function fit(){if(!R)return;zoom=fitZoom();applyZoom();viewer.scrollTo(0,0);}
+function zoomBy(f){
+  if(!R)return;
+  const cx=(viewer.scrollLeft+viewer.clientWidth/2-16)/zoom,cy=(viewer.scrollTop+viewer.clientHeight/2-16)/zoom;
+  zoom=clamp(zoom*f,Math.min(fitZoom(),.05),4);applyZoom();
+  viewer.scrollLeft=cx*zoom+16-viewer.clientWidth/2;viewer.scrollTop=cy*zoom+16-viewer.clientHeight/2;
+}
+function goTo(i){
+  if(!R||!R.regions.length)return;
+  cur=(i+R.regions.length)%R.regions.length;
+  const g=R.regions[cur];
+  paint();renderList();
+  zoom=clamp(Math.min(viewer.clientWidth/(g.w*2.4),viewer.clientHeight/(g.h*2.4)),fitZoom(),3);
+  applyZoom();
+  viewer.scrollLeft=(g.x+g.w/2)*zoom+16-viewer.clientWidth/2;
+  viewer.scrollTop=(g.y+g.h/2)*zoom+16-viewer.clientHeight/2;
+}
+$('#zin').onclick=()=>zoomBy(1.4);$('#zout').onclick=()=>zoomBy(1/1.4);$('#zfit').onclick=fit;
+$('#next').onclick=()=>goTo(cur+1);$('#prev').onclick=()=>goTo(cur<0?-1:cur-1);
+document.addEventListener('keydown',e=>{
+  if(e.target.matches('input,select'))return;
+  if(e.key==='ArrowRight'||e.key===']')goTo(cur+1);
+  else if(e.key==='ArrowLeft'||e.key==='[')goTo(cur<0?-1:cur-1);
+});
+viewer.addEventListener('wheel',e=>{if(e.ctrlKey||e.metaKey){e.preventDefault();zoomBy(e.deltaY<0?1.15:1/1.15);}},{passive:false});
+let pan=null;
+viewer.addEventListener('pointerdown',e=>{if(e.pointerType!=='mouse'||e.button!==0)return;pan={x:e.clientX,y:e.clientY,l:viewer.scrollLeft,t:viewer.scrollTop};viewer.classList.add('panning');viewer.setPointerCapture(e.pointerId);});
+viewer.addEventListener('pointermove',e=>{if(!pan)return;viewer.scrollLeft=pan.l-(e.clientX-pan.x);viewer.scrollTop=pan.t-(e.clientY-pan.y);});
+const endPan=()=>{pan=null;viewer.classList.remove('panning');};
+viewer.addEventListener('pointerup',endPan);viewer.addEventListener('pointercancel',endPan);
+
+document.querySelectorAll('input[name=mode],#showRem,#showAdd,#fade').forEach(el=>el.addEventListener('change',()=>{build();paint();}));
+$('#clouds').addEventListener('change',paint);
+$('#run').onclick=run;
+let t;const deb=()=>{clearTimeout(t);t=setTimeout(run,300);};
+['#tol','#dx','#dy'].forEach(s=>$(s).addEventListener('input',deb));
+$('#dpi').addEventListener('change',()=>{cache={};R&&(out.dataset.size='');run();});
+window.addEventListener('resize',()=>{if(R&&zoom<fitZoom())fit();});
+
+/* ---------- auto align ---------- */
+function kindOf(g){return g.rem>g.add*4?'ลบออก':g.add>g.rem*4?'เพิ่มเข้า':'แก้ไข';}
+function pool(m,w,h,f){
+  if(f===1)return{m,w,h};
+  const w2=Math.ceil(w/f),h2=Math.ceil(h/f),o=new Uint8Array(w2*h2);
+  for(let y=0;y<h;y++){const r=((y/f)|0)*w2,row=y*w;for(let x=0;x<w;x++)if(m[row+x])o[r+((x/f)|0)]=1;}
+  return{m:o,w:w2,h:h2};
+}
+function inkPts(p,maxN){
+  let n=0;for(let i=0;i<p.m.length;i++)n+=p.m[i];
+  const step=Math.max(1,Math.ceil(n/maxN)),xs=[],ys=[];let k=0;
+  for(let i=0;i<p.m.length;i++)if(p.m[i]&&(k++%step===0)){xs.push(i%p.w);ys.push((i/p.w)|0);}
+  return{xs:Int32Array.from(xs),ys:Int32Array.from(ys)};
+}
+function bestShift(A,P,cx,cy,r){
+  let best=-1,bx=cx,by=cy;const{xs,ys}=P,n=xs.length,aw=A.w,ah=A.h,am=A.m;
+  for(let dy=cy-r;dy<=cy+r;dy++)for(let dx=cx-r;dx<=cx+r;dx++){
+    let s=0;
+    for(let k=0;k<n;k++){const x=xs[k]+dx,y=ys[k]+dy;if(x>=0&&y>=0&&x<aw&&y<ah&&am[y*aw+x])s++;}
+    if(s>best||(s===best&&Math.abs(dx)+Math.abs(dy)<Math.abs(bx)+Math.abs(by))){best=s;bx=dx;by=dy;}
+  }
+  return[bx,by];
+}
+async function autoAlign(){
+  if(!src.old||!src.new||busy)return;
+  busy=true;$('#align').disabled=true;
+  let x=0,y=0,ok=false;
+  try{
+    setStatus('กำลังหาตำแหน่งที่ตรงกัน…');await tick();
+    const dpi=+$('#dpi').value,a=await getRender('old',dpi),b=await getRender('new',dpi);
+    const r=Math.min(40,Math.max(6,Math.round(Math.max(a.w,a.h)*0.08/8)));
+    [x,y]=bestShift(pool(a.mask,a.w,a.h,8),inkPts(pool(b.mask,b.w,b.h,8),30000),0,0,r);await tick();
+    [x,y]=bestShift(pool(a.mask,a.w,a.h,2),inkPts(pool(b.mask,b.w,b.h,2),120000),x*4,y*4,6);await tick();
+    [x,y]=bestShift({m:a.mask,w:a.w,h:a.h},inkPts({m:b.mask,w:b.w,h:b.h},150000),x*2,y*2,2);
+    $('#dx').value=x;$('#dy').value=y;ok=true;
+  }catch(e){console.error(e);setStatus('จัดตำแหน่งอัตโนมัติไม่สำเร็จ ลองเลื่อนแบบใหม่ด้วยตัวเอง',true);}
+  busy=false;$('#align').disabled=false;
+  if(ok){await run();setStatus(x||y?'เลื่อนแบบใหม่ '+x+', '+y+' พิกเซลให้ตรงกับแบบเก่าแล้ว':'แบบสองฉบับวางตรงกันอยู่แล้ว');}
+}
+
+/* ---------- export ---------- */
+async function saveFile(fn,data){
+  try{await TS.save(fn,data);setStatus('บันทึกแล้ว');}catch(e){console.error(e);setStatus('บันทึกไฟล์ไม่สำเร็จ',true);}
+}
+const cut=(s,n)=>s.length>n?s.slice(0,n-1)+'…':s;
+async function exportPdf(){
+  if(!R||!R.img)return;
+  if(!window.jspdf){setStatus('โหลดตัวสร้าง PDF ไม่สำเร็จ ตรวจการเชื่อมต่ออินเทอร์เน็ตแล้วรีเฟรชหน้า',true);return;}
+  const btn=$('#export');btn.disabled=true;setStatus('กำลังสร้างรายงาน…');await tick();
+  try{
+    try{await document.fonts.ready;}catch(e){}
+    const{W,H}=R,n=R.regions.length,total=1+Math.ceil(n/6);
+    const ov=mk(W,H),oc=ov.getContext('2d');oc.putImageData(R.img,0,0);drawClouds(oc,-1);
+    const PW=2480,PH=1754,M=90,F='"IBM Plex Sans Thai",sans-serif',pages=[];
+    const date=new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'});
+    const newPage=(title,pg)=>{
+      const c=mk(PW,PH),x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,PW,PH);
+      x.imageSmoothingQuality='high';x.textBaseline='alphabetic';
+      x.fillStyle='#1C2427';x.font='600 46px '+F;x.fillText(title,M,M+30);
+      x.font='28px '+F;x.fillStyle='#5B676C';
+      x.fillText('แบบเก่า: '+cut(src.old.name,70),M,M+80);x.fillText('แบบใหม่: '+cut(src.new.name,70),M,M+120);
+      x.textAlign='right';x.fillText(date,PW-M,M+30);x.fillText('หน้า '+pg+'/'+total,PW-M,M+80);x.fillText(TS.credit,PW-M,M+120);x.textAlign='left';
+      x.strokeStyle='#C9D0CF';x.lineWidth=2;x.beginPath();x.moveTo(M,M+150);x.lineTo(PW-M,M+150);x.stroke();
+      pages.push(c);return x;
+    };
+    let x=newPage('รายงานเทียบแบบ',1);
+    let lx=M;const ly=M+205;x.font='28px '+F;
+    for(const[col,label]of[['#D02438','ส่วนที่ถูกลบ'],['#1670C2','ส่วนที่เพิ่ม'],['#E07A00',n?'จุดเปลี่ยน '+n+' จุด':'ไม่พบความแตกต่าง']]){
+      x.fillStyle=col;x.fillRect(lx,ly-22,26,26);x.fillStyle='#1C2427';x.fillText(label,lx+40,ly);lx+=x.measureText(label).width+100;
+    }
+    const top=ly+40,bw=PW-2*M,bh=PH-top-M,s=Math.min(bw/W,bh/H),iw=W*s,ih=H*s,ix=M+(bw-iw)/2;
+    x.drawImage(ov,ix,top,iw,ih);x.strokeStyle='#C9D0CF';x.strokeRect(ix,top,iw,ih);
+    const cols=3,gap=40,top2=M+190,cw=(PW-2*M-gap*2)/cols,ch=(PH-top2-M-gap)/2,labelH=50,noteH=100,ih2=ch-labelH-noteH,ar=cw/ih2;
+    for(let i=0;i<n;i++){
+      const slot=i%6;
+      if(slot===0)x=newPage('รายการจุดแก้ไข',2+((i/6)|0));
+      const cx=M+(slot%cols)*(cw+gap),cy=top2+((slot/cols)|0)*(ch+gap),g=R.regions[i];
+      x.fillStyle='#1C2427';x.font='600 30px '+F;const t='จุดที่ '+(i+1);x.fillText(t,cx,cy+34);
+      const tw=x.measureText(t).width;x.font='26px '+F;x.fillStyle='#5B676C';x.fillText(kindOf(g),cx+tw+24,cy+34);
+      const pad=Math.max(g.w,g.h)*.35+Math.max(W,H)*.02;let rw=g.w+pad*2,rh=g.h+pad*2;
+      if(rw/rh<ar)rw=rh*ar;else rh=rw/ar;
+      x.drawImage(ov,g.x+g.w/2-rw/2,g.y+g.h/2-rh/2,rw,rh,cx,cy+labelH,cw,ih2);
+      x.strokeStyle='#C9D0CF';x.lineWidth=2;x.strokeRect(cx,cy+labelH,cw,ih2);
+      const ny=cy+labelH+ih2;x.font='24px '+F;x.fillText('หมายเหตุ',cx,ny+42);
+      x.beginPath();x.moveTo(cx+tw+24,ny+46);x.lineTo(cx+cw,ny+46);x.moveTo(cx,ny+90);x.lineTo(cx+cw,ny+90);x.stroke();
+    }
+    const doc=new window.jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a3',compress:true});doc.setProperties({creator:TS.producer});
+    pages.forEach((c,i)=>{if(i)doc.addPage('a3','landscape');doc.addImage(c.toDataURL('image/jpeg',.88),'JPEG',0,0,420,297);});
+    await saveFile('revision-compare-'+new Date().toISOString().slice(0,10)+'.pdf',doc.output('blob'));
+  }catch(e){console.error(e);setStatus('สร้างรายงานไม่สำเร็จ ลองลดความละเอียดลงแล้วส่งออกอีกครั้ง',true);}
+  btn.disabled=false;
+}
+$('#export').onclick=exportPdf;
+$('#align').onclick=autoAlign;
+$('#resetAlign').onclick=()=>{$('#dx').value=0;$('#dy').value=0;run();};
+
+/* ---------- demo drawing ---------- */
+function demoCanvas(v,dpi){
+  const k=dpi/100,c=mk(Math.round(1169*k),Math.round(827*k)),x=c.getContext('2d',{willReadFrequently:true});
+  x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.scale(k,k);
+  x.strokeStyle='#000';x.fillStyle='#000';x.lineCap='square';
+  const B=v==='B';
+  x.lineWidth=2;x.strokeRect(20,20,1129,787);x.strokeRect(880,690,269,117);
+  x.lineWidth=1;x.beginPath();x.moveTo(880,730);x.lineTo(1149,730);x.moveTo(880,770);x.lineTo(1149,770);x.moveTo(1040,770);x.lineTo(1040,807);x.stroke();
+  x.font='600 16px "IBM Plex Sans Thai",sans-serif';x.fillText('บ้านพักอาศัย 2 ชั้น',892,716);
+  x.font='14px "IBM Plex Sans Thai",sans-serif';x.fillText('แปลนพื้นชั้น 1  มาตราส่วน 1:100',892,756);
+  x.fillText('A-101',892,794);x.fillText(B?'Rev. B':'Rev. A',1052,794);
+  // outer walls
+  x.lineWidth=3;x.strokeRect(150,150,600,420);x.strokeRect(162,162,576,396);
+  // partition
+  const px=B?480:450;
+  x.beginPath();x.moveTo(px,162);x.lineTo(px,400);x.moveTo(px,470);x.lineTo(px,558);
+  x.moveTo(px+10,162);x.lineTo(px+10,400);x.moveTo(px+10,470);x.lineTo(px+10,558);x.stroke();
+  x.lineWidth=1.5;x.beginPath();x.moveTo(px+10,400);x.lineTo(px+80,400);x.stroke();
+  x.beginPath();x.arc(px+10,400,70,0,Math.PI/2);x.stroke();
+  // window (Rev B only)
+  if(B){x.lineWidth=1.5;x.clearRect(300,149,90,15);x.fillStyle='#fff';x.fillRect(300,148,90,16);x.fillStyle='#000';
+    x.beginPath();x.moveTo(300,150);x.lineTo(390,150);x.moveTo(300,156);x.lineTo(390,156);x.moveTo(300,162);x.lineTo(390,162);
+    x.moveTo(300,150);x.lineTo(300,162);x.moveTo(390,150);x.lineTo(390,162);x.stroke();}
+  // stair (both)
+  x.lineWidth=1;x.strokeRect(600,190,110,200);
+  for(let i=1;i<10;i++){x.beginPath();x.moveTo(600,190+i*20);x.lineTo(710,190+i*20);x.stroke();}
+  // bed (Rev B only)
+  if(B){x.lineWidth=1.5;x.strokeRect(200,210,160,200);x.strokeRect(215,220,60,35);x.strokeRect(285,220,60,35);}
+  // labels
+  x.font='15px "IBM Plex Sans Thai",sans-serif';
+  x.fillText(B?'ห้องนอนใหญ่':'ห้องนอน 1',B?250:240,480);x.fillText('โถงบันได',620,480);
+  // dimensions
+  x.lineWidth=1;x.beginPath();x.moveTo(150,620);x.lineTo(750,620);
+  for(const t of[150,px+5,750]){x.moveTo(t-6,626);x.lineTo(t+6,614);}x.stroke();
+  x.font='13px "IBM Plex Sans Thai",sans-serif';
+  x.fillText(B?'3.30':'3.00',(150+px)/2-12,610);x.fillText(B?'2.70':'3.00',(px+750)/2-12,610);
+  return c;
+}
+if(!PDFJS)setStatus('โหลดตัวอ่าน PDF ไม่สำเร็จ ตรวจการเชื่อมต่ออินเทอร์เน็ตแล้วรีเฟรชหน้า (ยังลองแบบตัวอย่างได้)',true);
+})();
+</script>
+</body>
+</html>

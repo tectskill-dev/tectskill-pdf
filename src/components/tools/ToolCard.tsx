@@ -26,6 +26,7 @@ const categoryTranslationKeys: Record<ToolCategory, string> = {
   'organize-manage': 'organizeManage',
   'optimize-repair': 'optimizeRepair',
   'secure-pdf': 'securePdf',
+  architect: 'architect',
 };
 
 /**
