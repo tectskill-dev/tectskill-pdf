@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -63,6 +63,16 @@ export interface StudioDocument {
   redoStack: HistoryItem[];
 }
 
+function checkIsMac(): boolean {
+  return (
+    typeof navigator !== 'undefined' &&
+    Boolean(
+      (navigator.platform && navigator.platform.toUpperCase().indexOf('MAC') >= 0) ||
+        (navigator.userAgent && navigator.userAgent.toUpperCase().indexOf('MAC') >= 0)
+    )
+  );
+}
+
 export const PDFStudio: React.FC<PDFStudioProps> = ({
   locale = 'en',
   className = '',
@@ -71,6 +81,19 @@ export const PDFStudio: React.FC<PDFStudioProps> = ({
   const router = useRouter();
   const validLocale = (locale as string) || 'en';
   const isZh = validLocale.toLowerCase().startsWith('zh');
+  const isMac = checkIsMac();
+
+  const closeDocTooltip = isTauri()
+    ? isMac
+      ? isZh
+        ? '关闭文档 (Cmd+W)'
+        : 'Close document (Cmd+W)'
+      : isZh
+        ? '关闭文档 (Ctrl+F4 / Ctrl+W)'
+        : 'Close document (Ctrl+F4 or Ctrl+W)'
+    : isZh
+      ? '关闭文档 (Ctrl+F4)'
+      : 'Close document (Ctrl+F4)';
 
   // Multi-document states
   const [documents, setDocuments] = useState<StudioDocument[]>(() => {
@@ -123,7 +146,24 @@ export const PDFStudio: React.FC<PDFStudioProps> = ({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const multiFileInputRef = useRef<HTMLInputElement>(null);
+  const tabStripRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const iframeCleanupRef = useRef<(() => void) | null>(null);
+  const handleKeyDownRef = useRef<((e: KeyboardEvent) => void) | null>(null);
+  const handleAddFilesRef = useRef<((files: FileList | File[]) => void) | null>(null);
+
+  // Synchronized state refs for stable event listeners
+  const documentsRef = useRef(documents);
+  const activeDocIdRef = useRef(activeDocId);
+  const isApplyingRef = useRef(isApplying);
+  const handleCloseDocumentRef = useRef<((docId: string, e?: React.MouseEvent) => void) | null>(null);
+
+  // Keep refs synchronized via layout effect (no mutations during render, synchronous before events)
+  useLayoutEffect(() => {
+    documentsRef.current = documents;
+    activeDocIdRef.current = activeDocId;
+    isApplyingRef.current = isApplying;
+  }, [documents, activeDocId, isApplying]);
 
   // Restore sidebar collapse state
   useEffect(() => {
@@ -144,6 +184,44 @@ export const PDFStudio: React.FC<PDFStudioProps> = ({
       return next;
     });
   }, []);
+
+  // Let a vertical mouse wheel scroll the horizontal tab strip (trackpads already scroll it sideways)
+  const hasDocuments = documents.length > 0;
+  useEffect(() => {
+    const strip = tabStripRef.current;
+    if (!strip) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+      if (strip.scrollWidth <= strip.clientWidth) return;
+      // deltaMode 1 = lines (Firefox mouse wheels), 2 = pages
+      const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? strip.clientWidth : 1;
+      e.preventDefault();
+      strip.scrollLeft += e.deltaY * unit;
+    };
+
+    strip.addEventListener('wheel', handleWheel, { passive: false });
+    return () => strip.removeEventListener('wheel', handleWheel);
+  }, [hasDocuments]);
+
+  // Keep the active tab visible when it changes (keyboard cycling, opening or closing documents)
+  const activeDocIdForStrip = activeDoc?.id;
+  useEffect(() => {
+    const strip = tabStripRef.current;
+    if (!strip || !activeDocIdForStrip) return;
+    const tab = Array.from(strip.children).find(
+      (el) => (el as HTMLElement).dataset.docId === activeDocIdForStrip
+    );
+    if (!tab) return;
+
+    const stripRect = strip.getBoundingClientRect();
+    const tabRect = tab.getBoundingClientRect();
+    if (tabRect.left < stripRect.left) {
+      strip.scrollLeft -= stripRect.left - tabRect.left;
+    } else if (tabRect.right > stripRect.right) {
+      strip.scrollLeft += tabRect.right - stripRect.right;
+    }
+  }, [activeDocIdForStrip]);
 
   // Update object URL when currentBlob changes
   useEffect(() => {
@@ -192,6 +270,8 @@ export const PDFStudio: React.FC<PDFStudioProps> = ({
         redoStack: [],
       }));
 
+      documentsRef.current = [...documentsRef.current, ...newDocs];
+      activeDocIdRef.current = newDocs[0].id;
       setDocuments((prev) => [...prev, ...newDocs]);
       setActiveDocId(newDocs[0].id);
       setActiveToolId(null);
@@ -213,39 +293,89 @@ export const PDFStudio: React.FC<PDFStudioProps> = ({
   );
 
   const handleSelectDocument = useCallback((docId: string) => {
+    activeDocIdRef.current = docId;
     setActiveDocId(docId);
     setActiveToolId(null);
   }, []);
 
+  // Sequentially cycle through open document tabs (wraps circularly, dismisses tool drawer)
+  const cycleDocumentTab = useCallback(
+    (direction: 'forward' | 'backward') => {
+      if (isApplyingRef.current) return;
+      const docs = documentsRef.current;
+      if (docs.length <= 1) return;
+
+      const currentId = activeDocIdRef.current;
+      const currentIndex = docs.findIndex((d) => d.id === currentId);
+      const validIndex = currentIndex === -1 ? 0 : currentIndex;
+
+      const nextIndex =
+        direction === 'forward'
+          ? (validIndex + 1) % docs.length
+          : (validIndex - 1 + docs.length) % docs.length;
+
+      const nextDoc = docs[nextIndex];
+      if (nextDoc) {
+        activeDocIdRef.current = nextDoc.id;
+        handleSelectDocument(nextDoc.id);
+      }
+    },
+    [handleSelectDocument]
+  );
+
   const handleCloseDocument = useCallback(
     (docId: string, e?: React.MouseEvent) => {
       if (e) e.stopPropagation();
-      setDocuments((prev) => {
-        const targetDoc = prev.find((d) => d.id === docId);
-        if (targetDoc && targetDoc.historyStack.length > 0) {
-          if (
-            !window.confirm(
-              isZh
-                ? `文档「${targetDoc.name}」包含未保存的修改，确定要关闭吗？`
-                : `Document "${targetDoc.name}" contains unsaved changes. Are you sure you want to close it?`
-            )
-          ) {
-            return prev;
-          }
+      if (isApplyingRef.current) return;
+
+      const currentDocs = documentsRef.current;
+      const targetDoc = currentDocs.find((d) => d.id === docId);
+      if (!targetDoc) return;
+
+      if (targetDoc.historyStack.length > 0) {
+        if (
+          !window.confirm(
+            isZh
+              ? `文档「${targetDoc.name}」包含未保存的修改，确定要关闭吗？`
+              : `Document "${targetDoc.name}" contains unsaved changes. Are you sure you want to close it?`
+          )
+        ) {
+          return;
         }
-        const remaining = prev.filter((d) => d.id !== docId);
-        if (activeDocId === docId) {
-          const closedIdx = prev.findIndex((d) => d.id === docId);
-          const next = remaining[Math.min(closedIdx, remaining.length - 1)] || null;
-          setActiveDocId(next ? next.id : null);
-        }
-        return remaining;
-      });
+      }
+
+      const closedIdx = currentDocs.findIndex((d) => d.id === docId);
+      const remaining = currentDocs.filter((d) => d.id !== docId);
+
+      if (activeDocIdRef.current === docId) {
+        const next = remaining.length > 0 ? remaining[Math.min(closedIdx, remaining.length - 1)] : null;
+        const nextDocId = next ? next.id : null;
+        activeDocIdRef.current = nextDocId;
+        setActiveDocId(nextDocId);
+        setActiveToolId(null);
+      }
+
+      documentsRef.current = remaining;
+      setDocuments(remaining);
     },
-    [activeDocId]
+    [isZh]
   );
 
-  // Handle Drag & Drop on Empty State and View Area
+  useLayoutEffect(() => {
+    handleCloseDocumentRef.current = handleCloseDocument;
+  }, [handleCloseDocument]);
+
+  useLayoutEffect(() => {
+    handleAddFilesRef.current = handleAddFiles;
+  }, [handleAddFiles]);
+
+  // Handle Drag & Drop anywhere in the Studio window
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    if (e.dataTransfer.types.includes('Files')) {
+      e.preventDefault();
+    }
+  }, []);
+
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
@@ -493,11 +623,71 @@ export const PDFStudio: React.FC<PDFStudioProps> = ({
     }
   }, [currentBlob, notify, isZh]);
 
-  // Keyboard shortcuts (Ctrl+Z, Ctrl+Y, Ctrl+S, Ctrl+P, Escape, /)
+  // Keyboard shortcuts (Ctrl+Z, Ctrl+Y, Ctrl+S, Ctrl+P, Escape, /, and tab cycling shortcuts)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+      const isMac = checkIsMac();
       const modKey = isMac ? e.metaKey : e.ctrlKey;
+
+      const isStandalone =
+        typeof window !== 'undefined' &&
+        Boolean(
+          window.matchMedia?.('(display-mode: standalone)').matches ||
+            (window.navigator as any)?.standalone
+        );
+      const isDesktopOrStandalone = isTauri() || isStandalone;
+
+      // Document Tab Cycling Shortcuts
+      const isForwardTabShortcut =
+        (isDesktopOrStandalone && e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey && e.key === 'Tab') ||
+        (e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey && (e.key === 'PageDown' || e.code === 'PageDown')) ||
+        (e.altKey && !e.ctrlKey && !e.metaKey && e.key === ']') ||
+        (isMac && e.metaKey && e.shiftKey && !e.ctrlKey && !e.altKey && (e.key === ']' || e.key === '}' || e.code === 'BracketRight'));
+
+      const isBackwardTabShortcut =
+        (isDesktopOrStandalone && e.ctrlKey && e.shiftKey && !e.altKey && !e.metaKey && e.key === 'Tab') ||
+        (e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey && (e.key === 'PageUp' || e.code === 'PageUp')) ||
+        (e.altKey && !e.ctrlKey && !e.metaKey && e.key === '[') ||
+        (isMac && e.metaKey && e.shiftKey && !e.ctrlKey && !e.altKey && (e.key === '[' || e.key === '{' || e.code === 'BracketLeft'));
+
+      // Document Tab Closing Shortcuts
+      const isF4Close =
+        (e.ctrlKey || (isMac && e.metaKey)) && !e.altKey && !e.shiftKey && (e.key === 'F4' || e.code === 'F4');
+
+      const isTauriWClose =
+        isTauri() &&
+        modKey &&
+        !e.altKey &&
+        !e.shiftKey &&
+        !(isMac ? e.ctrlKey : e.metaKey) &&
+        (e.key.toLowerCase() === 'w' || e.code === 'KeyW');
+
+      const isTabCloseShortcut = isF4Close || isTauriWClose;
+
+      if (isForwardTabShortcut) {
+        e.preventDefault();
+        e.stopPropagation();
+        cycleDocumentTab('forward');
+        return;
+      }
+
+      if (isBackwardTabShortcut) {
+        e.preventDefault();
+        e.stopPropagation();
+        cycleDocumentTab('backward');
+        return;
+      }
+
+      if (isTabCloseShortcut) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (isApplyingRef.current) return;
+        const currentDocId = activeDocIdRef.current;
+        if (currentDocId && handleCloseDocumentRef.current) {
+          handleCloseDocumentRef.current(currentDocId);
+        }
+        return;
+      }
 
       if (modKey && e.key.toLowerCase() === 'z') {
         e.preventDefault();
@@ -521,7 +711,11 @@ export const PDFStudio: React.FC<PDFStudioProps> = ({
         setIsExportMenuOpen(false);
       } else if (
         (modKey && e.key.toLowerCase() === 'k') ||
-        (e.key === '/' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA')
+        (e.key === '/' &&
+          document.activeElement?.tagName !== 'INPUT' &&
+          document.activeElement?.tagName !== 'TEXTAREA' &&
+          (e.target as HTMLElement)?.tagName !== 'INPUT' &&
+          (e.target as HTMLElement)?.tagName !== 'TEXTAREA')
       ) {
         e.preventDefault();
         const searchInput = document.querySelector<HTMLInputElement>('input[data-testid="studio-tool-search"]');
@@ -530,12 +724,85 @@ export const PDFStudio: React.FC<PDFStudioProps> = ({
       }
     };
 
+    handleKeyDownRef.current = handleKeyDown;
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleUndo, handleRedo, handleExport, handlePrint]);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      if (handleKeyDownRef.current === handleKeyDown) {
+        handleKeyDownRef.current = null;
+      }
+    };
+  }, [handleUndo, handleRedo, handleExport, handlePrint, cycleDocumentTab]);
+
+  // PDF Viewer Iframe Keystroke Relay Bridge
+  const attachIframeListener = useCallback(() => {
+    // Clean up any previously attached listener first
+    if (iframeCleanupRef.current) {
+      iframeCleanupRef.current();
+      iframeCleanupRef.current = null;
+    }
+
+    const iframeWin = iframeRef.current?.contentWindow;
+    if (!iframeWin) return;
+
+    const handleIframeKeyDown = (e: KeyboardEvent) => {
+      handleKeyDownRef.current?.(e);
+    };
+
+    // Route PDF drops on the viewer to Studio so they open as a new tab instead of
+    // replacing the viewer's document behind Studio's back. Non-PDF drops (e.g. images
+    // for the viewer's signature dialog) are left to the viewer.
+    const hasPdfItem = (dt: DataTransfer | null) =>
+      !!dt && Array.from(dt.items || []).some((item) => item.kind === 'file' && item.type === 'application/pdf');
+
+    const handleIframeDragOver = (e: DragEvent) => {
+      if (!hasPdfItem(e.dataTransfer)) return;
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
+    const handleIframeDrop = (e: DragEvent) => {
+      const files = Array.from(e.dataTransfer?.files || []);
+      const hasPdf = files.some(
+        (f) => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf')
+      );
+      if (!hasPdf) return;
+      e.preventDefault();
+      e.stopPropagation();
+      handleAddFilesRef.current?.(files);
+    };
+
+    try {
+      iframeWin.addEventListener('keydown', handleIframeKeyDown);
+      iframeWin.addEventListener('dragover', handleIframeDragOver, true);
+      iframeWin.addEventListener('drop', handleIframeDrop, true);
+      iframeCleanupRef.current = () => {
+        try {
+          iframeWin.removeEventListener('keydown', handleIframeKeyDown);
+          iframeWin.removeEventListener('dragover', handleIframeDragOver, true);
+          iframeWin.removeEventListener('drop', handleIframeDrop, true);
+        } catch {}
+      };
+    } catch {}
+  }, []);
+
+  // Sync iframe listener when active document or pdfUrl changes, and clean up on unmount
+  useEffect(() => {
+    attachIframeListener();
+    return () => {
+      if (iframeCleanupRef.current) {
+        iframeCleanupRef.current();
+        iframeCleanupRef.current = null;
+      }
+    };
+  }, [activeDocId, pdfUrl, attachIframeListener]);
 
   return (
-    <div className={`h-screen flex flex-col bg-[hsl(var(--color-background))] select-none ${className}`.trim()}>
+    <div
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+      className={`h-screen flex flex-col bg-[hsl(var(--color-background))] select-none ${className}`.trim()}
+    >
       {/* Studio Header (Compact Toolbar - 52px) */}
       <header className="h-[52px] flex-shrink-0 border-b border-[hsl(var(--color-border))] bg-[hsl(var(--color-card)/0.9)] backdrop-blur-md px-4 flex items-center justify-between z-30 relative">
         {/* Left: Brand & File Info */}
@@ -721,7 +988,7 @@ export const PDFStudio: React.FC<PDFStudioProps> = ({
                   }
                 }}
                 className="p-1.5 rounded-lg text-[hsl(var(--color-muted-foreground))] hover:text-red-500 hover:bg-[hsl(var(--color-muted))] transition-colors ml-1"
-                title={isZh ? '关闭文档' : 'Close document'}
+                title={closeDocTooltip}
                 aria-label="Close file"
               >
                 <X className="w-4 h-4" />
@@ -793,13 +1060,17 @@ export const PDFStudio: React.FC<PDFStudioProps> = ({
       {documents.length > 0 && (
         <div className="h-10 flex-shrink-0 border-b border-[hsl(var(--color-border)/0.8)] bg-[hsl(var(--color-muted)/0.35)] px-3 flex items-center justify-between z-20">
           {/* Scrollable Document Tabs */}
-          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-1 flex-1 min-w-0 mr-2">
+          <div
+            ref={tabStripRef}
+            className="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-1 flex-1 min-w-0 mr-2"
+          >
             {documents.map((doc) => {
               const isActive = doc.id === activeDoc?.id;
               const isModified = doc.historyStack.length > 0;
               return (
                 <div
                   key={doc.id}
+                  data-doc-id={doc.id}
                   onClick={() => handleSelectDocument(doc.id)}
                   className={`group flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-all border shrink-0 max-w-[220px] select-none ${
                     isActive
@@ -824,7 +1095,7 @@ export const PDFStudio: React.FC<PDFStudioProps> = ({
                     type="button"
                     onClick={(e) => handleCloseDocument(doc.id, e)}
                     className="p-0.5 rounded-md hover:bg-[hsl(var(--color-muted))] text-[hsl(var(--color-muted-foreground))] hover:text-red-500 opacity-60 group-hover:opacity-100 transition-all ml-0.5"
-                    title={isZh ? '关闭文档' : 'Close document'}
+                    title={closeDocTooltip}
                     aria-label={`Close ${doc.name}`}
                   >
                     <X className="w-3 h-3" />
@@ -886,6 +1157,7 @@ export const PDFStudio: React.FC<PDFStudioProps> = ({
             <main className="flex-1 relative bg-zinc-900/10 dark:bg-black/40 overflow-hidden">
               <iframe
                 ref={iframeRef}
+                onLoad={attachIframeListener}
                 src={withBasePath(`/pdfjs-viewer/viewer.html?file=${encodeURIComponent(pdfUrl)}`)}
                 className="w-full h-full border-0 absolute inset-0"
                 title={file.name}
@@ -918,11 +1190,7 @@ export const PDFStudio: React.FC<PDFStudioProps> = ({
           </>
         ) : (
           /* Empty Workspace Welcome & Import Screen */
-          <div
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={handleDrop}
-            className="flex-1 flex flex-col items-center justify-center p-6 text-center"
-          >
+          <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
             <input
               ref={fileInputRef}
               type="file"
