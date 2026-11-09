@@ -27,6 +27,15 @@ vi.mock('next/font/google', () => ({
   },
 }));
 
+// TectSkill PDF: Sarabun (Thai) is loaded with next/font/local
+vi.mock('next/font/local', () => ({
+  default: () => ({
+    variable: '--font-thai',
+    className: 'sarabun',
+    style: { fontFamily: 'Sarabun' },
+  }),
+}));
+
 import { fontVariables, fontVariablesFor, notoSansArabic } from '@/lib/fonts';
 
 describe('Arabic font configuration', () => {
@@ -65,5 +74,12 @@ describe('fontVariablesFor', () => {
 
     expect(variables).toBe(fontVariables);
     expect(variables).not.toContain('--font-arabic');
+  });
+});
+
+describe('Thai font configuration (TectSkill PDF)', () => {
+  it('includes the Thai font variable for every locale', () => {
+    expect(fontVariables).toContain('--font-thai');
+    expect(fontVariablesFor('rtl')).toContain('--font-thai');
   });
 });

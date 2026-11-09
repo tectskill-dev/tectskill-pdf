@@ -57,7 +57,7 @@ jobs:
         id: version
         shell: bash
         run: |
-          VERSION="v$(date +'%Y.%m.%d')-$(git rev-parse --short HEAD)"
+          VERSION="$(tr -d '[:space:]' < VERSION)"  # TectSkill PDF: same as the upstream PDFCraft release it is based on
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Build frontend

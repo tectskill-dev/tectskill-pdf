@@ -27,7 +27,7 @@ jobs:
 
       - name: Version
         id: version
-        run: echo "version=v$(date +'%Y.%m.%d')-$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        run: echo "version=$(tr -d '[:space:]' < VERSION)" >> $GITHUB_OUTPUT
 
       - name: Download Windows build
         uses: actions/download-artifact@v4
@@ -47,6 +47,7 @@ jobs:
             ## TectSkill PDF ${{ steps.version.outputs.version }}
 
             ชุดเครื่องมือ PDF ภาษาไทย ใช้งานออฟไลน์ในเครื่อง ไฟล์ไม่ถูกส่งไปที่ไหน
+            อ้างอิงต้นฉบับ PDFCraft ${{ steps.version.outputs.version }}
 
             ### ดาวน์โหลด (Windows 10/11)
             - **ตัวติดตั้ง (แนะนำ):** ไฟล์ `*-setup.exe` หรือ `.msi`
