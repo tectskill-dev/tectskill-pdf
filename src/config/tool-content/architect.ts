@@ -797,8 +797,140 @@ export const architectToolContentTh: Record<string, ToolContent> = {
   }
 };
 
+/** Other TectSkill-only tools (not architect-specific) */
+export const tectskillToolContentEn: Record<string, ToolContent> = {
+  "insert-pages": {
+    "title": "Insert Pages",
+    "metaDescription": "Insert pages from another PDF at any position, or replace a page range with new pages, e.g. swap revised sheets into a drawing set. Runs locally.",
+    "keywords": [
+      "insert pages pdf",
+      "replace pages pdf",
+      "insert pdf into pdf",
+      "drawing set revision"
+    ],
+    "description": "<p>Insert pages from another PDF at the beginning, the end, or after any page. Or switch to \"Replace pages\" to remove a page range and put the new pages in exactly the same place, ideal for swapping revised sheets into a drawing set.</p><p>Pick which pages to take from the inserted file. Bookmarks, forms and links of the main document are kept. Everything runs on your device; files are never uploaded.</p>",
+    "howToUse": [
+      {
+        "step": 1,
+        "title": "Choose files",
+        "description": "Upload the main PDF and the PDF with the pages to insert"
+      },
+      {
+        "step": 2,
+        "title": "Set up",
+        "description": "Choose Insert and a position, or Replace and the page range; optionally pick which pages to use"
+      },
+      {
+        "step": 3,
+        "title": "Export",
+        "description": "Check the page order summary, run it and download the result"
+      }
+    ],
+    "useCases": [
+      {
+        "title": "Swap in a revision",
+        "description": "Replace sheets in the middle of a set with revised ones; other pages keep their order",
+        "icon": "file-check"
+      },
+      {
+        "title": "Add a cover or transmittal",
+        "description": "Insert a cover page or transmittal letter at the front",
+        "icon": "file-text"
+      },
+      {
+        "title": "Attach calculations",
+        "description": "Insert calculations or supporting documents after the related page",
+        "icon": "book"
+      }
+    ],
+    "faq": [
+      {
+        "question": "Must the new page count match the removed pages?",
+        "answer": "No. You can remove 2 pages and insert 3."
+      },
+      {
+        "question": "Are the main document bookmarks kept?",
+        "answer": "Yes, except bookmarks that pointed to replaced pages; fix those with the bookmark editor."
+      },
+      {
+        "question": "Are my files uploaded?",
+        "answer": "No. Everything runs on your device, in the web and desktop versions."
+      }
+    ]
+  }
+};
+
+export const tectskillToolContentTh: Record<string, ToolContent> = {
+  "insert-pages": {
+    "title": "แทรกหน้าจากไฟล์อื่น",
+    "metaDescription": "แทรกหน้าจาก PDF อีกไฟล์ในตำแหน่งที่ต้องการ หรือแทนที่ช่วงหน้าเดิมด้วยหน้าใหม่ เช่น เปลี่ยนแบบที่แก้ไขในชุดแบบ ทำในเครื่องของคุณ",
+    "keywords": [
+      "แทรกหน้า PDF",
+      "แทนที่หน้า PDF",
+      "insert pages",
+      "replace pages",
+      "ชุดแบบ"
+    ],
+    "description": "<p>แทรกหน้าจาก PDF อีกไฟล์เข้าไปในตำแหน่งใดก็ได้ ทั้งต้นไฟล์ ท้ายไฟล์ หรือหลังหน้าที่ต้องการ หรือเลือกโหมด \"แทนที่หน้า\" เพื่อเอาหน้าเดิมช่วงหนึ่งออกแล้วใส่หน้าใหม่ในตำแหน่งเดียวกัน เหมาะกับการเปลี่ยนแบบที่แก้ไข (Rev.) ในชุดแบบโดยไม่ต้องจัดเรียงใหม่ทั้งชุด</p><p>เลือกได้ว่าจะใช้หน้าไหนจากไฟล์ที่แทรก บุ๊กมาร์ก ฟอร์ม และลิงก์ของไฟล์หลักยังอยู่ครบ ประมวลผลทั้งหมดในเครื่องของคุณ ไฟล์ไม่ถูกอัปโหลดไปที่ใด</p>",
+    "howToUse": [
+      {
+        "step": 1,
+        "title": "เลือกไฟล์",
+        "description": "อัปโหลดไฟล์หลัก (เช่น ชุดแบบ) และไฟล์ที่มีหน้าที่จะแทรก"
+      },
+      {
+        "step": 2,
+        "title": "ตั้งค่า",
+        "description": "เลือก \"แทรกหน้า\" แล้วกำหนดตำแหน่ง หรือเลือก \"แทนที่หน้า\" แล้วใส่ช่วงหน้าที่จะเปลี่ยน จากนั้นเลือกหน้าที่จะใช้จากไฟล์ที่แทรก"
+      },
+      {
+        "step": 3,
+        "title": "ส่งออก",
+        "description": "ตรวจลำดับหน้าในสรุปผลลัพธ์ แล้วกดแทรกหรือแทนที่ และดาวน์โหลดไฟล์"
+      }
+    ],
+    "useCases": [
+      {
+        "title": "เปลี่ยนแบบ Rev. ใหม่",
+        "description": "แทนที่แผ่นเดิมกลางชุดแบบด้วยแผ่นที่แก้ไขแล้ว ลำดับหน้าอื่นไม่เปลี่ยน",
+        "icon": "file-check"
+      },
+      {
+        "title": "ใส่หน้าปกหรือใบนำส่ง",
+        "description": "แทรกหน้าปกหรือจดหมายนำส่งไว้หน้าแรกของเอกสาร",
+        "icon": "file-text"
+      },
+      {
+        "title": "แนบรายการคำนวณ",
+        "description": "แทรกรายการคำนวณหรือเอกสารประกอบไว้หลังหน้าที่เกี่ยวข้อง",
+        "icon": "book"
+      }
+    ],
+    "faq": [
+      {
+        "question": "จำนวนหน้าใหม่ต้องเท่ากับหน้าที่เอาออกไหม",
+        "answer": "ไม่ต้อง เช่น เอาออก 2 หน้าแล้วใส่ใหม่ 3 หน้าได้"
+      },
+      {
+        "question": "บุ๊กมาร์กของไฟล์หลักจะหายไหม",
+        "answer": "ไม่หาย ยกเว้นบุ๊กมาร์กที่ชี้ไปยังหน้าที่ถูกแทนที่ ซึ่งจะไม่มีปลายทางแล้ว ควรแก้ด้วยเครื่องมือแก้ไขบุ๊กมาร์ก"
+      },
+      {
+        "question": "ไฟล์ถูกอัปโหลดไหม",
+        "answer": "ไม่ ทุกอย่างประมวลผลในเครื่องของคุณ ทั้งเวอร์ชันเว็บและโปรแกรมที่ติดตั้ง"
+      }
+    ]
+  }
+};
+
+/** IDs of every tool whose content lives in this file (TectSkill additions) */
+export const TECTSKILL_EXTRA_TOOL_IDS: string[] = [
+  ...Object.keys(architectToolContentEn),
+  ...Object.keys(tectskillToolContentEn),
+];
+
 /** Architect tool content for a locale (Thai or English fallback). */
 export function getArchitectToolContent(locale: string, toolId: string): ToolContent | undefined {
-  if (locale === 'th') return architectToolContentTh[toolId];
-  return architectToolContentEn[toolId];
+  if (locale === 'th') return architectToolContentTh[toolId] ?? tectskillToolContentTh[toolId];
+  return architectToolContentEn[toolId] ?? tectskillToolContentEn[toolId];
 }

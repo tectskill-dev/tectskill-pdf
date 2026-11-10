@@ -809,6 +809,19 @@ export const tools: Tool[] = [
     features: ['insert-position', 'page-size', 'multiple-pages'],
     relatedTools: ['organize-pdf', 'delete-pages', 'merge-pdf'],
   },
+  // TectSkill PDF: insert pages from another PDF / replace a page range
+  {
+    id: 'insert-pages',
+    slug: 'insert-pages',
+    icon: 'file-symlink',
+    category: 'organize-manage',
+    acceptedFormats: ['.pdf'],
+    outputFormat: 'pdf',
+    maxFileSize: DEFAULT_MAX_FILE_SIZE,
+    maxFiles: 2,
+    features: ['insert-at-position', 'replace-page-range', 'select-source-pages', 'keep-bookmarks-forms'],
+    relatedTools: ['sheet-set-builder', 'organize-pdf', 'merge-pdf'],
+  },
   {
     id: 'reverse-pages',
     slug: 'reverse-pages',

@@ -1,3 +1,4 @@
+import { TECTSKILL_EXTRA_TOOL_IDS } from '@/config/tool-content/architect';
 import { describe, expect, it } from 'vitest';
 import { getAllTools } from '@/config/tools';
 import { getToolContent, toolContentEn, toolContentPl, toolContentCs, toolContentHi } from '@/config/tool-content';
@@ -15,7 +16,7 @@ describe('tool content integrity', () => {
     const englishToolIds = Object.keys(toolContentEn);
     // TectSkill PDF: architect tools have their own Thai/English content file
     const configuredToolIds = getAllTools()
-      .filter((tool) => tool.category !== 'architect')
+      .filter((tool) => !TECTSKILL_EXTRA_TOOL_IDS.includes(tool.id))
       .map((tool) => tool.id);
     const missingTools = englishToolIds.filter((toolId) => !toolContentPl[toolId]);
     const missingConfiguredTools = configuredToolIds.filter((toolId) => !toolContentPl[toolId]);
@@ -36,7 +37,7 @@ describe('tool content integrity', () => {
     const englishToolIds = Object.keys(toolContentEn);
     // TectSkill PDF: architect tools have their own Thai/English content file
     const configuredToolIds = getAllTools()
-      .filter((tool) => tool.category !== 'architect')
+      .filter((tool) => !TECTSKILL_EXTRA_TOOL_IDS.includes(tool.id))
       .map((tool) => tool.id);
     const missingTools = englishToolIds.filter((toolId) => !toolContentCs[toolId]);
     const missingConfiguredTools = configuredToolIds.filter((toolId) => !toolContentCs[toolId]);
@@ -57,7 +58,7 @@ describe('tool content integrity', () => {
     const englishToolIds = Object.keys(toolContentEn);
     // TectSkill PDF: architect tools have their own Thai/English content file
     const configuredToolIds = getAllTools()
-      .filter((tool) => tool.category !== 'architect')
+      .filter((tool) => !TECTSKILL_EXTRA_TOOL_IDS.includes(tool.id))
       .map((tool) => tool.id);
     const missingTools = englishToolIds.filter((toolId) => !toolContentHi[toolId]);
     const missingConfiguredTools = configuredToolIds.filter((toolId) => !toolContentHi[toolId]);

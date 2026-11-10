@@ -76,6 +76,7 @@ import {
     Shrink,
     Printer,
     DraftingCompass,
+    FileSymlink,
 } from 'lucide-react';
 
 export const ICON_MAP: Record<string, LucideIcon> = {
@@ -86,6 +87,7 @@ export const ICON_MAP: Record<string, LucideIcon> = {
     'shrink': Shrink,
     'printer': Printer,
     'drafting-compass': DraftingCompass,
+    'file-symlink': FileSymlink,
     'pencil-ruler': PencilRuler,
     'combine': Merge,
     'merge': Merge,

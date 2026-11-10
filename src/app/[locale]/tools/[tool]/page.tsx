@@ -26,6 +26,7 @@ import { EditMetadataTool } from '@/components/tools/edit-metadata';
 import { PDFsToZipTool } from '@/components/tools/pdf-to-zip';
 import { ComparePDFsTool } from '@/components/tools/compare-pdfs';
 import { ArchToolFrame } from '@/components/tools/arch-tools';
+import { InsertPagesTool } from '@/components/tools/insert-pages';
 import { EditPDFTool } from '@/components/tools/edit-pdf';
 import { ImageToPDFTool } from '@/components/tools/image-to-pdf';
 import { TextToPDFTool } from '@/components/tools/text-to-pdf';
@@ -296,6 +297,8 @@ export default async function ToolPageRoute({ params }: ToolPageParams) {
         return <EditMetadataTool />;
       case 'pdf-to-zip':
         return <PDFsToZipTool />;
+      case 'insert-pages':
+        return <InsertPagesTool />;
       // TectSkill PDF: architect tools (self-contained apps in /public/arch-tools)
       case 'revision-compare':
         return <ArchToolFrame file="revision-compare" title={content.title} />;

@@ -319,10 +319,11 @@ describe('Tool Configuration Property Tests', () => {
       );
     });
 
-    it('getAllTools returns all 132 upstream tools plus 7 TectSkill architect tools', () => {
+    it('getAllTools returns all 132 upstream tools plus 8 TectSkill tools', () => {
       const allTools = getAllTools();
-      expect(allTools.filter((tool) => tool.category !== 'architect').length).toBe(132);
       expect(allTools.filter((tool) => tool.category === 'architect').length).toBe(7);
+      expect(allTools.filter((tool) => tool.id === 'insert-pages').length).toBe(1);
+      expect(allTools.length).toBe(132 + 8);
     });
 
     it('all tools have required properties', () => {
